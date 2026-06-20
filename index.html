@@ -830,7 +830,7 @@
      2. Deploy as Web App, copy đường link "exec" dán vào API_URL bên dưới
      3. Lưu file, mở lại trang là dùng được
   -------------------------------------- */
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzYfmZ2k_hFOoFl8EEzTTtjaWmFhOE6O-1cgp51moJUC9IpPiYm7VZb6xiRb_4PiMCx/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbxa52YTBr2swj8dD7vUaanJ5IxgGCdwxz2Lr7Xbyp8n8u9TYmBAvgIHkPEbr6H03CSK/exec';
 
   function localGet(key, fallback){
     try{
@@ -866,6 +866,20 @@
     if(!res.ok) throw new Error('API POST failed: '+res.status);
     return await res.json();
   }
+  async function apiGetTable(sheetName){
+    const res = await fetchWithTimeout(API_URL + '?sheet=' + encodeURIComponent(sheetName));
+    if(!res.ok) throw new Error('API GET failed: '+res.status);
+    return await res.json();
+  }
+  async function apiSetTable(sheetName, data){
+    const res = await fetchWithTimeout(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ sheet: sheetName, data })
+    });
+    if(!res.ok) throw new Error('API POST failed: '+res.status);
+    return await res.json();
+  }
 
   /* ---------- storage ---------- */
   async function loadLangPref(){
@@ -893,42 +907,38 @@
   }
   async function loadProducts(){
     try{
-      const v = await apiGet('products');
-      products = v ? JSON.parse(v) : [];
+      products = await apiGetTable('SanPham');
     }catch(e){ console.error(e); products = []; toast(t('toastConnectionError')); }
   }
   async function saveProducts(){
-    try{ await apiSet('products', JSON.stringify(products)); }
+    try{ await apiSetTable('SanPham', products); }
     catch(e){ console.error(e); toast(t('toastStorageError')); }
   }
   async function loadTransactions(){
     try{
-      const v = await apiGet('transactions');
-      transactions = v ? JSON.parse(v) : [];
+      transactions = await apiGetTable('GiaoDich');
     }catch(e){ console.error(e); transactions = []; toast(t('toastConnectionError')); }
   }
   async function saveTransactions(){
-    try{ await apiSet('transactions', JSON.stringify(transactions)); }
+    try{ await apiSetTable('GiaoDich', transactions); }
     catch(e){ console.error(e); toast(t('toastStorageError')); }
   }
   async function loadStaffList(){
     try{
-      const v = await apiGet('staff');
-      staffList = v ? JSON.parse(v) : [];
+      staffList = await apiGetTable('NhanVien');
     }catch(e){ console.error(e); staffList = []; toast(t('toastConnectionError')); }
   }
   async function saveStaffList(){
-    try{ await apiSet('staff', JSON.stringify(staffList)); }
+    try{ await apiSetTable('NhanVien', staffList); }
     catch(e){ console.error(e); toast(t('toastStorageError')); }
   }
   async function loadShiftRevenue(){
     try{
-      const v = await apiGet('shift-revenue');
-      shiftRevenue = v ? JSON.parse(v) : [];
+      shiftRevenue = await apiGetTable('DoanhSoCa');
     }catch(e){ console.error(e); shiftRevenue = []; toast(t('toastConnectionError')); }
   }
   async function saveShiftRevenue(){
-    try{ await apiSet('shift-revenue', JSON.stringify(shiftRevenue)); }
+    try{ await apiSetTable('DoanhSoCa', shiftRevenue); }
     catch(e){ console.error(e); toast(t('toastStorageError')); }
   }
 
@@ -1101,8 +1111,9 @@
     const delta = actual - system;
     const date = $('#reconcileDateInput').value || todayStr();
     const note = $('#reconcileNoteInput').value.trim();
+    const product = products.find(p=>p.id===productId);
     transactions.push({
-      id: uid(), type:'adjust', productId, qty: delta, date,
+      id: uid(), type:'adjust', productId, productName: product?product.name:'', qty: delta, date,
       note: note || (delta===0 ? t('reconcileNoteDefaultMatch') : t('reconcileNoteDefaultAdjust')),
       by: staffName || '—', ts: Date.now()
     });
@@ -1158,7 +1169,7 @@
     products.push({id, name, brand, category, lowStock: isNaN(lowStock)?5:lowStock, sellPrice, active:true});
     saveProducts();
     if(initStock>0){
-      transactions.push({id:uid(), type:'in', productId:id, qty:initStock, date: todayStr(), note:'Tồn kho ban đầu', by: staffName||'—', ts:Date.now()});
+      transactions.push({id:uid(), type:'in', productId:id, productName:name, qty:initStock, date: todayStr(), note:'Tồn kho ban đầu', by: staffName||'—', ts:Date.now()});
       saveTransactions();
     }
     $('#productForm').reset();
@@ -1288,7 +1299,8 @@
       }
     }
     const total = price>0 ? qty*price : 0;
-    transactions.push({id:uid(), type, productId, qty, date, note, price, total, payment, ca, by: staffName||'—', ts:Date.now()});
+    const productForTx = products.find(p=>p.id===productId);
+    transactions.push({id:uid(), type, productId, productName: productForTx?productForTx.name:'', qty, date, note, price, total, payment, ca, by: staffName||'—', ts:Date.now()});
     saveTransactions();
     $('#'+selectId).value=''; $('#'+qtyId).value=''; $('#'+noteId).value=''; $('#'+priceId).value=''; $('#'+paymentId).value='';
     $('#'+totalDisplayId).textContent='—';
