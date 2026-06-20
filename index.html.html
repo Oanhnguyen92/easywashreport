@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Easy Wash & Dry — Quản lý Xuất Nhập Tồn</title>
+<style>
+  :root{
+    --bg:#FAF6EF;
+    --surface:#FFFFFF;
+    --ink:#2B2723;
+    --ink-soft:#8A8175;
+    --border:#E9E2D4;
+    --teal:#28615C;
+    --teal-light:#E5EFEC;
+    --amber:#BD7B43;
+    --amber-light:#F8EEE0;
+    --danger:#B14B36;
+    --danger-light:#FAE7E1;
+    --success:#3F7D5C;
+    --success-light:#E7F2EB;
+    --shadow:0 1px 2px rgba(43,39,35,0.04), 0 4px 14px rgba(43,39,35,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app-shell{max-width:980px;margin:0 auto;padding:0 16px 60px;}
+
+  /* Topbar */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;padding:20px 0 14px;flex-wrap:wrap;
+  }
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .topbar-logo{
+    width:42px;height:42px;border-radius:11px;
+    background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;letter-spacing:0.5px;flex-shrink:0;
+  }
+  .topbar-title{font-size:18px;font-weight:700;line-height:1.2;}
+  .topbar-sub{font-size:12.5px;color:var(--ink-soft);margin-top:1px;}
+  .topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .staff-label{font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+  .staff-input{
+    border:1px solid var(--border);background:var(--surface);
+    border-radius:8px;padding:8px 10px;font-size:13.5px;width:140px;color:var(--ink);
+  }
+  .staff-input:focus{outline:2px solid var(--teal);outline-offset:1px;}
+
+  /* Language toggle */
+  .lang-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0;}
+  .lang-btn{
+    appearance:none;border:none;background:var(--surface);color:var(--ink-soft);
+    padding:7px 10px;font-size:11.5px;font-weight:700;cursor:pointer;
+  }
+  .lang-btn.active{background:var(--teal);color:#fff;}
+  .role-link{
+    background:none;border:none;color:var(--ink-soft);font-size:11.5px;font-weight:600;
+    cursor:pointer;text-decoration:underline;padding:0;flex-shrink:0;
+  }
+
+  /* Tabs */
+  .tabs{
+    display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);
+    padding-bottom:0;margin-bottom:20px;-webkit-overflow-scrolling:touch;
+  }
+  .tab{
+    appearance:none;border:none;background:transparent;cursor:pointer;
+    padding:10px 14px;font-size:13.5px;font-weight:600;color:var(--ink-soft);
+    white-space:nowrap;border-bottom:2.5px solid transparent;margin-bottom:-1px;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+  .tab:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px;}
+
+  .panel.hidden{display:none;}
+
+  /* Stats */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px;}
+  .stat-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:16px;box-shadow:var(--shadow);
+  }
+  .stat-num{font-size:26px;font-weight:700;line-height:1;}
+  .stat-label{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .stat-card.stat-warn .stat-num{color:var(--danger);}
+  .stat-card.stat-revenue .stat-num{color:var(--teal);font-size:20px;}
+
+  /* Category groups / product cards */
+  .cat-group{margin-bottom:20px;}
+  .cat-title{font-size:13.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.4px;margin:0 0 10px;}
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;}
+  .product-card{
+    background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--border);
+    border-radius:12px;padding:13px 14px;box-shadow:var(--shadow);
+  }
+  .product-card.status-ok{border-left-color:var(--success);}
+  .product-card.status-low{border-left-color:var(--amber);}
+  .product-card.status-out{border-left-color:var(--danger);}
+  .product-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .product-name{font-weight:600;font-size:14px;}
+  .product-brand{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .product-stock{display:flex;align-items:baseline;gap:5px;margin-top:10px;}
+  .stock-num{font-size:22px;font-weight:700;}
+  .stock-unit{font-size:12.5px;color:var(--ink-soft);}
+
+  .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap;}
+  .badge-ok{background:var(--success-light);color:var(--success);}
+  .badge-low{background:var(--amber-light);color:var(--amber);}
+  .badge-out{background:var(--danger-light);color:var(--danger);}
+
+  /* Cards / forms */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:18px;margin-bottom:16px;box-shadow:var(--shadow);
+  }
+  .card-title{font-size:15px;font-weight:700;margin:0 0 4px;}
+  .card-hint{font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field-wide{grid-column:1/-1;}
+  .field label{font-size:12px;font-weight:600;color:var(--ink-soft);}
+  .field input,.field select{
+    border:1px solid var(--border);border-radius:9px;padding:11px 12px;font-size:16px;
+    background:var(--bg);color:var(--ink);width:100%;
+  }
+  .field input:focus,.field select:focus{outline:2px solid var(--teal);outline-offset:0;background:var(--surface);}
+
+  .btn{
+    appearance:none;border:none;border-radius:9px;padding:13px 18px;font-size:14.5px;font-weight:700;
+    cursor:pointer;grid-column:1/-1;justify-self:start;transition:opacity .15s ease, transform .05s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{opacity:0.92;}
+  .btn-amber{background:var(--amber);color:#fff;}
+  .btn-amber:hover{opacity:0.92;}
+  .btn-secondary{background:var(--bg);color:var(--ink);border:1px solid var(--border);}
+  .hidden{display:none !important;}
+
+  /* Lists */
+  .list-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 2px;border-bottom:1px solid var(--border);
+  }
+  .list-row:last-child{border-bottom:none;}
+  .list-row.inactive{opacity:0.5;}
+  .list-row-title{font-size:13.5px;font-weight:600;}
+  .list-row-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .list-row-actions{display:flex;gap:6px;flex-shrink:0;}
+  .muted{color:var(--ink-soft);font-weight:400;}
+  .tag-inactive{color:var(--danger);font-weight:600;}
+  .btn-icon{
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink);white-space:nowrap;
+    min-height:36px;
+  }
+  .btn-icon:hover{background:var(--teal-light);}
+  .btn-icon-sm{
+    background:transparent;border:none;color:var(--danger);font-size:12.5px;font-weight:600;
+    cursor:pointer;padding:8px;white-space:nowrap;
+  }
+  .btn-icon-sm:hover{text-decoration:underline;}
+
+  /* Reconcile */
+  .reconcile-preview{grid-column:1/-1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:6px;}
+  .reconcile-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;}
+  .reconcile-match{color:var(--success);}
+  .reconcile-surplus{color:var(--teal);}
+  .reconcile-deficit{color:var(--danger);}
+
+  /* History */
+  .filters-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .filters-row select,.filters-row input{
+    border:1px solid var(--border);border-radius:9px;padding:9px 10px;font-size:15px;background:var(--bg);color:var(--ink);
+  }
+  .table-wrap{overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  thead th{
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:0.3px;
+    color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}
+  .tx-type{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;}
+  .tx-in{background:var(--teal-light);color:var(--teal);}
+  .tx-out{background:var(--amber-light);color:var(--amber);}
+  .tx-adjust{background:var(--success-light);color:var(--success);}
+
+  /* Empty state */
+  .empty-state{padding:28px 10px;text-align:center;}
+  .empty-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .empty-sub{font-size:12.5px;color:var(--ink-soft);max-width:340px;margin:0 auto;}
+
+  /* Money */
+  .money-preview{
+    border:1px solid var(--border);border-radius:9px;padding:9px 10px;font-size:14px;font-weight:700;
+    background:var(--bg);color:var(--teal);
+  }
+
+  /* Session header (set-once fields, shared by Xuất kho + Doanh số ca) */
+  .session-card{background:var(--teal-light);border-color:var(--teal);}
+  .session-header{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;
+  }
+  .session-header .field label{color:var(--teal);}
+  .session-header-hint{font-size:12px;color:var(--ink-soft);margin:10px 0 0;}
+
+  /* Toast */
+  .toast{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;
+    opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease;z-index:50;box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* Loading */
+  .loading-overlay{
+    position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    font-size:13.5px;color:var(--ink-soft);z-index:100;transition:opacity .2s ease;
+  }
+  .loading-overlay.hidden{opacity:0;pointer-events:none;}
+  .spinner{
+    width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Role gate */
+  .role-gate{
+    position:fixed;inset:0;background:var(--bg);z-index:90;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .role-gate-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:28px 24px;max-width:360px;width:100%;text-align:center;box-shadow:var(--shadow);
+  }
+  .role-gate-logo{
+    width:48px;height:48px;border-radius:13px;background:var(--teal);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;
+    margin:0 auto 14px;
+  }
+  .role-gate-card h2{font-size:16px;margin:0 0 18px;line-height:1.4;}
+  .role-gate-buttons{display:flex;flex-direction:column;gap:10px;}
+  .role-gate-buttons .btn{grid-column:auto;justify-self:stretch;width:100%;}
+  #pinSection{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+  #pinSection p{font-size:12.5px;color:var(--ink-soft);margin:0;}
+  #pinSection input{
+    border:1px solid var(--border);border-radius:9px;padding:10px;font-size:15px;text-align:center;
+    letter-spacing:3px;background:var(--bg);color:var(--ink);width:100%;
+  }
+  .pin-error{font-size:12px;color:var(--danger);}
+
+  @media (max-width:560px){
+    .app-shell{padding:0 12px 60px;}
+    .card{padding:14px;}
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .topbar{flex-direction:column;align-items:flex-start;}
+    .topbar-right{width:100%;}
+    .staff-input{flex:1;}
+    .form-grid{grid-template-columns:1fr;}
+    .session-header{grid-template-columns:1fr;}
+    .btn{width:100%;justify-self:stretch;text-align:center;}
+    .tab{padding:11px 13px;font-size:13px;}
+    .list-row{flex-wrap:wrap;}
+    .list-row-actions{width:100%;justify-content:flex-end;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <div>Đang tải dữ liệu...</div>
+</div>
+
+<div id="roleGate" class="role-gate hidden">
+  <div class="role-gate-card">
+    <div class="role-gate-logo">EW</div>
+    <h2 data-i18n="gateTitle">Bạn đang sử dụng app với vai trò nào?</h2>
+    <div class="role-gate-buttons">
+      <button id="roleStaffBtn" type="button" class="btn btn-amber" data-i18n="roleStaffBtn">Tôi là Nhân viên</button>
+      <button id="roleAdminBtn" type="button" class="btn btn-primary" data-i18n="roleAdminBtn">Tôi là Quản lý</button>
+    </div>
+    <div id="pinSection" class="hidden">
+      <p id="pinHint" data-i18n="pinHintEnter">Nhập mã quản lý</p>
+      <input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="••••" />
+      <input id="pinConfirmInput" type="password" inputmode="numeric" maxlength="8" placeholder="••••" class="hidden" />
+      <button id="pinSubmitBtn" type="button" class="btn btn-primary" data-i18n="pinSubmitBtn">Vào</button>
+      <div id="pinError" class="pin-error hidden"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">EW</div>
+      <div>
+        <div class="topbar-title">Easy Wash & Dry</div>
+        <div class="topbar-sub" data-i18n="appSubtitle">Quản lý Xuất – Nhập – Tồn</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="lang-toggle">
+        <button type="button" class="lang-btn" id="langViBtn" data-lang="vi">VI</button>
+        <button type="button" class="lang-btn" id="langLoBtn" data-lang="lo">ລາວ</button>
+      </div>
+      <span class="staff-label" data-i18n="staffLabel">Bạn là</span>
+      <select id="staffNameSelect" class="staff-input"></select>
+      <button type="button" id="switchRoleBtn" class="role-link" data-i18n="switchRoleLink">Đổi vai trò</button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview" data-i18n="tabOverview">Tổng quan</button>
+    <button class="tab" data-tab="in" data-i18n="tabIn">Nhập kho</button>
+    <button class="tab" data-tab="out" data-i18n="tabOut">Xuất kho</button>
+    <button class="tab" data-tab="reconcile" data-i18n="tabReconcile">Đối chiếu</button>
+    <button class="tab" data-tab="products" data-i18n="tabProducts">Sản phẩm</button>
+    <button class="tab" data-tab="staff" data-i18n="tabStaff">Nhân viên</button>
+    <button class="tab" data-tab="report" data-i18n="tabReport">Báo cáo</button>
+    <button class="tab" data-tab="history" data-i18n="tabHistory">Lịch sử</button>
+  </nav>
+
+  <section id="panel-overview" class="panel">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="statTotalProducts">0</div><div class="stat-label" data-i18n="statTotalProductsLabel">Sản phẩm đang theo dõi</div></div>
+      <div class="stat-card stat-warn"><div class="stat-num" id="statLowStock">0</div><div class="stat-label" data-i18n="statLowStockLabel">Sắp hết / hết hàng</div></div>
+      <div class="stat-card"><div class="stat-num" id="statTodayTx">0</div><div class="stat-label" data-i18n="statTodayTxLabel">Giao dịch hôm nay</div></div>
+      <div class="stat-card stat-revenue"><div class="stat-num" id="statTodayRevenue">0 ₭</div><div class="stat-label" data-i18n="statTodayRevenueLabel">Doanh thu hôm nay</div></div>
+    </div>
+    <div id="overviewList"></div>
+  </section>
+
+  <section id="panel-in" class="panel hidden">
+    <div class="card">
+      <h3 class="card-title" data-i18n="inTitle">Ghi nhận nhập kho</h3>
+      <p class="card-hint" data-i18n="inHint">Mỗi khi nhập hàng từ nhà cung cấp (2–3 lần/tháng), ghi lại tại đây.</p>
+      <form id="inForm" class="form-grid">
+        <div class="field"><label data-i18n="labelProduct">Sản phẩm</label><select id="inProductSelect" required></select></div>
+        <div class="field"><label data-i18n="labelQty">Số lượng (gói)</label><input id="inQtyInput" type="number" min="1" step="1" required /></div>
+        <div class="field"><label data-i18n="labelInPrice">Đơn giá nhập (₭/gói)</label><input id="inPriceInput" type="number" min="0" step="1000" /></div>
+        <div class="field"><label data-i18n="labelPayment">Phương thức thanh toán</label>
+          <select id="inPaymentSelect">
+            <option value="" data-i18n="paymentNone">— Không ghi —</option>
+            <option value="cash" data-i18n="paymentCash">Tiền mặt</option>
+            <option value="transfer" data-i18n="paymentTransfer">Chuyển khoản</option>
+          </select>
+        </div>
+        <div class="field"><label data-i18n="labelInDate">Ngày nhập</label><input id="inDateInput" type="date" /></div>
+        <div class="field"><label data-i18n="labelTotal">Thành tiền</label><div id="inTotalDisplay" class="money-preview">—</div></div>
+        <div class="field field-wide"><label data-i18n="labelInNote">Ghi chú (nhà cung cấp...)</label><input id="inNoteInput" type="text" /></div>
+        <button type="submit" class="btn btn-primary" data-i18n="btnSaveIn">Lưu nhập kho</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="recentInTitle">Nhập kho gần đây</h3>
+      <div id="inRecentList"></div>
+    </div>
+  </section>
+
+  <section id="panel-out" class="panel hidden">
+    <div class="card session-card">
+      <div class="session-header">
+        <div class="field"><label data-i18n="labelOutDate">Ngày xuất</label><input id="outDateInput" type="date" /></div>
+        <div class="field"><label data-i18n="labelShift">Ca</label>
+          <input id="outCaInput" type="text" list="caOptions" placeholder="Sáng / Chiều / Tối" />
+          <datalist id="caOptions"><option value="Sáng"></option><option value="Chiều"></option><option value="Tối"></option></datalist>
+        </div>
+      </div>
+      <p class="session-header-hint" data-i18n="sessionHeaderHint">Đặt ngày và ca một lần — dùng chung cho cả xuất kho và doanh số ca bên dưới, không cần nhập lại.</p>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="outTitle">Ghi nhận xuất kho / bán hàng</h3>
+      <p class="card-hint" data-i18n="outHint">Ghi số lượng bán ra hàng ngày kèm ca làm việc — dùng song song hoặc thay cho báo cáo Google Form của nhân viên.</p>
+      <form id="outForm" class="form-grid">
+        <div class="field"><label data-i18n="labelProduct">Sản phẩm</label><select id="outProductSelect" required></select></div>
+        <div class="field"><label data-i18n="labelQty">Số lượng (gói)</label><input id="outQtyInput" type="number" min="1" step="1" required /></div>
+        <div class="field"><label data-i18n="labelOutPrice">Đơn giá bán (₭/gói)</label><input id="outPriceInput" type="number" min="0" step="1000" /></div>
+        <div class="field"><label data-i18n="labelPayment">Phương thức thanh toán</label>
+          <select id="outPaymentSelect">
+            <option value="" data-i18n="paymentNone">— Không ghi —</option>
+            <option value="cash" data-i18n="paymentCash">Tiền mặt</option>
+            <option value="transfer" data-i18n="paymentTransfer">Chuyển khoản</option>
+          </select>
+        </div>
+        <div class="field"><label data-i18n="labelTotal">Thành tiền</label><div id="outTotalDisplay" class="money-preview">—</div></div>
+        <div class="field field-wide"><label data-i18n="labelOutNote">Ghi chú</label><input id="outNoteInput" type="text" /></div>
+        <button type="submit" class="btn btn-amber" data-i18n="btnSaveOut">Lưu xuất kho</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="recentOutTitle">Xuất kho gần đây</h3>
+      <div id="outRecentList"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="shiftTitle">Ghi doanh số giặt sấy theo ca</h3>
+      <p class="card-hint" data-i18n="shiftHint">Ghi doanh số dịch vụ giặt sấy mỗi ca làm việc của từng nhân viên — dùng để tính thưởng cuối tháng.</p>
+      <form id="shiftForm" class="form-grid">
+        <div class="field"><label data-i18n="labelCash">Tiền mặt (₭)</label><input id="shiftCashInput" type="number" min="0" step="1000" value="0" /></div>
+        <div class="field"><label data-i18n="labelTransfer">Chuyển khoản (₭)</label><input id="shiftTransferInput" type="number" min="0" step="1000" value="0" /></div>
+        <div class="field"><label data-i18n="labelTotalRevenue">Doanh số</label><div id="shiftTotalDisplay" class="money-preview">0 ₭</div></div>
+        <div class="field field-wide"><label data-i18n="labelNote">Ghi chú</label><input id="shiftNoteInput" type="text" /></div>
+        <button type="submit" class="btn btn-primary" data-i18n="btnSaveShift">Lưu doanh số ca</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="recentShiftTitle">Ca gần đây</h3>
+      <div id="shiftRecentList"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="summaryTitle">Tổng hợp theo tháng (để tính thưởng)</h3>
+      <div class="filters-row">
+        <input id="shiftSummaryMonth" type="month" />
+      </div>
+      <div id="shiftSummaryTable"></div>
+    </div>
+  </section>
+
+  <section id="panel-reconcile" class="panel hidden">
+    <div class="card">
+      <h3 class="card-title" data-i18n="reconcileTitle">Đối chiếu tồn thực tế</h3>
+      <p class="card-hint" data-i18n="reconcileHint">So sánh số tồn hệ thống (tự tính từ nhập – xuất) với số lượng đếm thực tế tại cửa hàng. Khi lưu, hệ thống sẽ tự điều chỉnh để khớp với số đếm thực tế.</p>
+      <form id="reconcileForm" class="form-grid">
+        <div class="field"><label data-i18n="labelProduct">Sản phẩm</label><select id="reconcileProductSelect" required></select></div>
+        <div class="field"><label data-i18n="labelActualQty">Số lượng đếm thực tế (gói)</label><input id="reconcileActualInput" type="number" min="0" step="1" required /></div>
+        <div class="field"><label data-i18n="labelReconcileDate">Ngày đối chiếu</label><input id="reconcileDateInput" type="date" /></div>
+        <div class="field field-wide"><label data-i18n="labelNote">Ghi chú</label><input id="reconcileNoteInput" type="text" /></div>
+        <div id="reconcilePreview" class="reconcile-preview"></div>
+        <button type="submit" class="btn btn-primary" data-i18n="btnSaveReconcile">Lưu kết quả đối chiếu</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="reconcileHistoryTitle">Lịch sử đối chiếu</h3>
+      <div id="reconcileHistory"></div>
+    </div>
+  </section>
+
+  <section id="panel-products" class="panel hidden">
+    <div class="card">
+      <h3 class="card-title" id="productFormTitle" data-i18n="productFormTitleAdd">Thêm sản phẩm</h3>
+      <form id="productForm" class="form-grid">
+        <div class="field"><label data-i18n="labelProductName">Tên sản phẩm</label><input id="productNameInput" type="text" placeholder="VD: Nước giặt Ariel 3.8L" required /></div>
+        <div class="field"><label data-i18n="labelBrand">Nhãn hiệu</label><input id="productBrandInput" type="text" placeholder="VD: Ariel" /></div>
+        <div class="field">
+          <label data-i18n="labelCategory">Loại</label>
+          <input id="productCategoryInput" type="text" list="categoryOptions" placeholder="Nước giặt / Nước xả" />
+          <datalist id="categoryOptions"><option value="Nước giặt"></option><option value="Nước xả"></option></datalist>
+        </div>
+        <div class="field"><label data-i18n="labelLowStock">Ngưỡng cảnh báo (gói)</label><input id="productLowStockInput" type="number" min="0" step="1" value="5" /></div>
+        <div class="field"><label data-i18n="labelSellPrice">Giá bán mặc định (₭/gói)</label><input id="productSellPriceInput" type="number" min="0" step="1000" placeholder="Tùy chọn" /></div>
+        <div class="field" id="productInitStockField"><label data-i18n="labelInitStock">Tồn kho ban đầu (gói)</label><input id="productInitStockInput" type="number" min="0" step="1" value="0" /></div>
+        <button type="submit" id="productFormSubmitBtn" class="btn btn-primary" data-i18n="btnAddProduct">Thêm sản phẩm</button>
+        <button type="button" id="productCancelEditBtn" class="btn btn-secondary hidden" data-i18n="btnCancel">Hủy</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="productsListTitle">Danh sách sản phẩm</h3>
+      <div id="productsList"></div>
+    </div>
+  </section>
+
+  <section id="panel-staff" class="panel hidden">
+    <div class="card">
+      <h3 class="card-title" data-i18n="staffFormTitle">Thêm nhân viên</h3>
+      <p class="card-hint" data-i18n="staffFormHint">Danh sách này dùng để chọn tên khi nhập liệu ở các tab khác. Khi nhân viên nghỉ việc, đánh dấu nghỉ việc thay vì xóa hẳn để giữ nguyên lịch sử giao dịch của họ.</p>
+      <form id="staffForm" class="form-grid">
+        <div class="field field-wide"><label data-i18n="labelStaffName">Tên nhân viên</label><input id="staffNameInputNew" type="text" placeholder="VD: Lan" required /></div>
+        <button type="submit" class="btn btn-primary" data-i18n="btnAddStaff">Thêm nhân viên</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="staffListTitle">Danh sách nhân viên</h3>
+      <div id="staffListContainer"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="changePinTitle">Đổi mã quản lý</h3>
+      <p class="card-hint" data-i18n="changePinHint">Mã này dùng để vào chế độ Quản lý trên thiết bị khác.</p>
+      <form id="changePinForm" class="form-grid">
+        <div class="field"><label data-i18n="currentPin">Mã hiện tại</label><input id="currentPinInput" type="password" inputmode="numeric" required /></div>
+        <div class="field"><label data-i18n="newPin">Mã mới</label><input id="newPinInput" type="password" inputmode="numeric" required /></div>
+        <div class="field"><label data-i18n="confirmNewPin">Nhập lại mã mới</label><input id="confirmNewPinInput" type="password" inputmode="numeric" required /></div>
+        <button type="submit" class="btn btn-secondary" data-i18n="changePinBtn">Đổi mã</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="panel-report" class="panel hidden">
+    <div class="card">
+      <h3 class="card-title" data-i18n="reportTitle">Báo cáo theo ngày</h3>
+      <div class="filters-row">
+        <input id="reportDate" type="date" />
+      </div>
+      <div class="stats-row" id="reportStats"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="reportOutByProductTitle">Xuất kho theo sản phẩm</h3>
+      <div id="reportOutTable"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="reportInByProductTitle">Nhập kho theo sản phẩm</h3>
+      <div id="reportInTable"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title" data-i18n="reportShiftTitle">Doanh số giặt sấy theo ca</h3>
+      <div id="reportShiftTable"></div>
+    </div>
+  </section>
+
+  <section id="panel-history" class="panel hidden">
+    <div class="card">
+      <h3 class="card-title" data-i18n="historyTitle">Lịch sử giao dịch</h3>
+      <div class="filters-row">
+        <select id="historyProductFilter"></select>
+        <select id="historyTypeFilter">
+          <option value="" data-i18n="filterAllTypes">Tất cả loại</option>
+          <option value="in" data-i18n="typeIn">Nhập kho</option>
+          <option value="out" data-i18n="typeOut">Xuất kho</option>
+          <option value="adjust" data-i18n="typeAdjust">Điều chỉnh</option>
+        </select>
+        <input id="historyFromDate" type="date" />
+        <input id="historyToDate" type="date" />
+      </div>
+      <div id="historyTable"></div>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+  const I18N = {
+    vi: {
+      appSubtitle: "Quản lý Xuất – Nhập – Tồn",
+      staffLabel: "Bạn là",
+      switchRoleLink: "Đổi vai trò",
+      tabOverview: "Tổng quan", tabIn: "Nhập kho", tabOut: "Xuất kho & Doanh số", tabReconcile: "Đối chiếu",
+      tabShift: "Doanh số ca", tabProducts: "Sản phẩm", tabStaff: "Nhân viên", tabHistory: "Lịch sử",
+      statTotalProductsLabel: "Sản phẩm đang theo dõi",
+      statLowStockLabel: "Sắp hết / hết hàng",
+      statTodayTxLabel: "Giao dịch hôm nay",
+      statTodayRevenueLabel: "Doanh thu hôm nay",
+      overviewEmptyTitle: "Chưa có sản phẩm nào",
+      overviewEmptySub: "Thêm sản phẩm đầu tiên ở tab Sản phẩm để bắt đầu theo dõi tồn kho.",
+      statusOk: "Đủ hàng", statusLow: "Sắp hết", statusOut: "Hết hàng",
+      stockUnit: "gói",
+      labelStockColon: "Tồn:", labelThresholdColon: "Ngưỡng cảnh báo:",
+      inTitle: "Ghi nhận nhập kho",
+      inHint: "Mỗi khi nhập hàng từ nhà cung cấp (2–3 lần/tháng), ghi lại tại đây.",
+      labelProduct: "Sản phẩm", labelQty: "Số lượng (gói)",
+      labelInPrice: "Đơn giá nhập (₭/gói)", labelOutPrice: "Đơn giá bán (₭/gói)",
+      labelPayment: "Phương thức thanh toán",
+      paymentNone: "— Không ghi —", paymentCash: "Tiền mặt", paymentTransfer: "Chuyển khoản",
+      labelInDate: "Ngày nhập", labelOutDate: "Ngày xuất",
+      labelTotal: "Thành tiền",
+      labelInNote: "Ghi chú (nhà cung cấp...)", labelOutNote: "Ghi chú",
+      btnSaveIn: "Lưu nhập kho", recentInTitle: "Nhập kho gần đây",
+      outTitle: "Ghi nhận xuất kho / bán hàng",
+      outHint: "Ghi số lượng bán ra hàng ngày kèm ca làm việc — dùng song song hoặc thay cho báo cáo Google Form của nhân viên.",
+      recentOutTitle: "Xuất kho gần đây", btnSaveOut: "Lưu xuất kho",
+      reconcileTitle: "Đối chiếu tồn thực tế",
+      reconcileHint: "So sánh số tồn hệ thống (tự tính từ nhập – xuất) với số lượng đếm thực tế tại cửa hàng. Khi lưu, hệ thống sẽ tự điều chỉnh để khớp với số đếm thực tế.",
+      labelActualQty: "Số lượng đếm thực tế (gói)", labelReconcileDate: "Ngày đối chiếu",
+      labelNote: "Ghi chú", btnSaveReconcile: "Lưu kết quả đối chiếu",
+      reconcileHistoryTitle: "Lịch sử đối chiếu",
+      reconcileSystemLabel: "Tồn theo hệ thống", reconcileDiffLabel: "Chênh lệch",
+      reconcileMatchLabel: "Khớp với hệ thống", reconcileMatchShort: "Khớp",
+      reconcileSurplus: "Thừa {n} gói", reconcileDeficit: "Thiếu {n} gói",
+      reconcileNoteDefaultMatch: "Khớp tồn kho", reconcileNoteDefaultAdjust: "Đối chiếu thực tế",
+      shiftTitle: "Ghi doanh số giặt sấy theo ca",
+      shiftHint: "Ghi doanh số dịch vụ giặt sấy mỗi ca làm việc của từng nhân viên — dùng để tính thưởng cuối tháng.",
+      labelDate: "Ngày", labelShift: "Ca", labelStaffOnShift: "Nhân viên trực ca",
+      labelCash: "Tiền mặt (₭)", labelTransfer: "Chuyển khoản (₭)", labelTotalRevenue: "Doanh số",
+      btnSaveShift: "Lưu doanh số ca", recentShiftTitle: "Ca gần đây",
+      summaryTitle: "Tổng hợp theo tháng (để tính thưởng)",
+      summaryColStaff: "Nhân viên", summaryColShifts: "Số ca", summaryColTotal: "Tổng doanh số",
+      productFormTitleAdd: "Thêm sản phẩm", productFormTitleEdit: "Sửa sản phẩm",
+      labelProductName: "Tên sản phẩm", labelBrand: "Nhãn hiệu", labelCategory: "Loại",
+      labelLowStock: "Ngưỡng cảnh báo (gói)", labelInitStock: "Tồn kho ban đầu (gói)",
+      btnAddProduct: "Thêm sản phẩm", btnUpdateProduct: "Cập nhật sản phẩm", btnCancel: "Hủy",
+      productsListTitle: "Danh sách sản phẩm",
+      productEditBtn: "Sửa", productDeactivateBtn: "Ngừng KD", productActivateBtn: "Kích hoạt lại",
+      tagInactiveProduct: "Ngừng KD",
+      staffFormTitle: "Thêm nhân viên",
+      staffFormHint: "Danh sách này dùng để chọn tên khi nhập liệu ở các tab khác. Khi nhân viên nghỉ việc, đánh dấu nghỉ việc thay vì xóa hẳn để giữ nguyên lịch sử giao dịch của họ.",
+      labelStaffName: "Tên nhân viên", btnAddStaff: "Thêm nhân viên", staffListTitle: "Danh sách nhân viên",
+      tagResigned: "Đã nghỉ việc", btnMarkResigned: "Đánh dấu nghỉ việc", btnReactivateStaff: "Cho làm lại",
+      changePinTitle: "Đổi mã quản lý",
+      changePinHint: "Mã này dùng để vào chế độ Quản lý trên thiết bị khác.",
+      currentPin: "Mã hiện tại", newPin: "Mã mới", confirmNewPin: "Nhập lại mã mới", changePinBtn: "Đổi mã",
+      historyTitle: "Lịch sử giao dịch",
+      filterAllProducts: "Tất cả sản phẩm", filterAllTypes: "Tất cả loại",
+      typeIn: "Nhập kho", typeOut: "Xuất kho", typeAdjust: "Điều chỉnh",
+      colDate: "Ngày", colType: "Loại", colProduct: "Sản phẩm", colQty: "SL",
+      colPrice: "Đơn giá", colTotal: "Thành tiền", colPaymentMethod: "Thanh toán",
+      colBy: "Người nhập", colNote: "Ghi chú",
+      btnDelete: "Xóa",
+      emptyProductsTitle: "Chưa có sản phẩm", emptyProductsSub: "Thêm sản phẩm đầu tiên bằng biểu mẫu bên trên.",
+      emptyInTitle: "Chưa có lần nhập kho nào", emptyOutTitle: "Chưa có lần xuất kho nào",
+      emptyRecentSub: "Dùng biểu mẫu bên trên để ghi nhận.",
+      emptyReconcileTitle: "Chưa có lần đối chiếu nào", emptyReconcileSub: "Thực hiện đối chiếu đầu tiên ở biểu mẫu bên trên.",
+      emptyStaffTitle: "Chưa có nhân viên nào", emptyStaffSub: "Thêm nhân viên đầu tiên bằng biểu mẫu bên trên.",
+      emptyShiftTitle: "Chưa có ca nào được ghi", emptyShiftSub: "Dùng biểu mẫu bên trên để ghi doanh số ca đầu tiên.",
+      emptySummaryNoMonth: "Chọn tháng để xem tổng hợp doanh số theo nhân viên.",
+      emptySummaryMonth: "Không có ca nào trong tháng đã chọn.", emptySummaryTitle: "Chưa có dữ liệu",
+      emptyHistoryTitle: "Không có giao dịch", emptyHistorySub: "Thử thay đổi bộ lọc hoặc thêm giao dịch mới.",
+      toastSavedIn: "Đã lưu nhập kho", toastSavedOut: "Đã lưu xuất kho", toastDeleted: "Đã xóa giao dịch",
+      toastReconcileMatch: "Đã xác nhận khớp tồn kho", toastReconcileAdjusted: "Đã lưu điều chỉnh tồn kho",
+      toastProductAdded: "Đã thêm sản phẩm", toastProductUpdated: "Đã cập nhật sản phẩm",
+      toastProductDeactivated: "Đã ngừng kinh doanh sản phẩm", toastProductActivated: "Đã kích hoạt lại sản phẩm",
+      toastStaffAdded: "Đã thêm nhân viên", toastStaffResigned: "Đã đánh dấu nghỉ việc",
+      toastStaffReactivated: "Đã cho làm lại", toastShiftSaved: "Đã lưu doanh số ca", toastShiftDeleted: "Đã xóa",
+      toastPinChanged: "Đã đổi mã quản lý", toastStorageError: "Lỗi lưu dữ liệu, thử lại",
+      toastConnectionError: "Không kết nối được Google Sheets — kiểm tra mạng hoặc đường link API_URL",
+      alertSelectProduct: "Vui lòng chọn sản phẩm", alertQtyPositive: "Số lượng phải lớn hơn 0",
+      alertSelectStaffFirst: "Vui lòng chọn tên của bạn ở góc trên trước khi lưu",
+      alertOutExceedsStock: "Tồn hệ thống hiện chỉ còn {current} gói, ít hơn số lượng xuất ({qty}). Vẫn muốn lưu?",
+      alertEnterActualQty: "Vui lòng nhập số lượng thực tế", alertEnterProductName: "Vui lòng nhập tên sản phẩm",
+      alertEnterStaffName: "Vui lòng nhập tên nhân viên", alertStaffDuplicate: "Nhân viên này đã có trong danh sách",
+      alertSelectShiftStaff: "Vui lòng chọn nhân viên trực ca",
+      alertEnterShiftRevenue: "Vui lòng nhập doanh số (tiền mặt hoặc chuyển khoản)",
+      confirmDeleteTx: "Xóa giao dịch này?", confirmDeleteShift: "Xóa ca này?",
+      phChooseProduct: "— Chọn sản phẩm —", phChooseStaff: "— Chọn nhân viên —",
+      gateTitle: "Bạn đang sử dụng app với vai trò nào?",
+      roleStaffBtn: "Tôi là Nhân viên", roleAdminBtn: "Tôi là Quản lý",
+      pinHintEnter: "Nhập mã quản lý",
+      pinHintSetup: "Lần đầu sử dụng — tạo mã quản lý mới (ít nhất 4 số), nhập lại để xác nhận",
+      pinSubmitBtn: "Vào",
+      pinErrorEmpty: "Vui lòng nhập mã", pinErrorTooShort: "Mã phải có ít nhất 4 ký tự",
+      pinErrorMismatch: "Hai mã nhập không khớp", pinErrorWrong: "Mã không đúng, thử lại",
+      tabReport: "Báo cáo",
+      reportTitle: "Báo cáo theo ngày",
+      reportOutByProductTitle: "Xuất kho theo sản phẩm",
+      reportInByProductTitle: "Nhập kho theo sản phẩm",
+      reportShiftTitle: "Doanh số giặt sấy theo ca",
+      reportStatOutLabel: "Doanh thu bán hàng",
+      reportStatShiftLabel: "Doanh số giặt sấy",
+      reportStatTotalLabel: "Tổng doanh thu trong ngày",
+      reportStatInLabel: "Chi phí nhập hàng",
+      emptyReportOutTitle: "Chưa có xuất kho trong ngày này",
+      emptyReportInTitle: "Chưa có nhập kho trong ngày này",
+      emptyReportShiftTitle: "Chưa có doanh số ca trong ngày này",
+      emptyReportSub: "Chọn ngày khác để xem dữ liệu.",
+      sessionHeaderHint: "Đặt ngày và ca một lần cho cả phiên làm việc, không cần nhập lại mỗi lần xuất hàng.",
+      labelSellPrice: "Giá bán mặc định (₭/gói)",
+      sellPriceColon: "Giá bán:"
+    },
+    lo: {
+      appSubtitle: "ຈັດການ ນຳອອກ – ນຳເຂົ້າ – ສາງເຫຼືອ",
+      staffLabel: "ທ່ານແມ່ນ",
+      switchRoleLink: "ປ່ຽນບົດບາດ",
+      tabOverview: "ພາບລວມ", tabIn: "ນຳເຂົ້າສາງ", tabOut: "ນຳອອກສາງ & ຍອດຂາຍ", tabReconcile: "ກວດສອບສາງ",
+      tabShift: "ຍອດຂາຍຕໍ່ກະ", tabProducts: "ສິນຄ້າ", tabStaff: "ພະນັກງານ", tabHistory: "ປະຫວັດ",
+      statTotalProductsLabel: "ສິນຄ້າທີ່ກຳລັງຕິດຕາມ",
+      statLowStockLabel: "ໃກ້ໝົດ / ໝົດແລ້ວ",
+      statTodayTxLabel: "ລາຍການມື້ນີ້",
+      statTodayRevenueLabel: "ຍອດຂາຍມື້ນີ້",
+      overviewEmptyTitle: "ຍັງບໍ່ມີສິນຄ້າ",
+      overviewEmptySub: "ເພີ່ມສິນຄ້າທຳອິດໃນແຖບສິນຄ້າ ເພື່ອເລີ່ມຕິດຕາມສາງ.",
+      statusOk: "ພຽງພໍ", statusLow: "ໃກ້ໝົດ", statusOut: "ໝົດແລ້ວ",
+      stockUnit: "ຊອງ",
+      labelStockColon: "ສາງ:", labelThresholdColon: "ລະດັບເຕືອນ:",
+      inTitle: "ບັນທຶກການນຳເຂົ້າ",
+      inHint: "ທຸກຄັ້ງທີ່ນຳເຂົ້າສິນຄ້າຈາກຜູ້ສະໜອງ (2–3 ຄັ້ງ/ເດືອນ), ບັນທຶກໄວ້ບ່ອນນີ້.",
+      labelProduct: "ສິນຄ້າ", labelQty: "ຈຳນວນ (ຊອງ)",
+      labelInPrice: "ລາຄານຳເຂົ້າ (₭/ຊອງ)", labelOutPrice: "ລາຄາຂາຍ (₭/ຊອງ)",
+      labelPayment: "ວິທີຊຳລະເງິນ",
+      paymentNone: "— ບໍ່ບັນທຶກ —", paymentCash: "ເງິນສົດ", paymentTransfer: "ໂອນເງິນ",
+      labelInDate: "ວັນທີນຳເຂົ້າ", labelOutDate: "ວັນທີນຳອອກ",
+      labelTotal: "ມູນຄ່າ",
+      labelInNote: "ໝາຍເຫດ (ຜູ້ສະໜອງ...)", labelOutNote: "ໝາຍເຫດ",
+      btnSaveIn: "ບັນທຶກນຳເຂົ້າ", recentInTitle: "ການນຳເຂົ້າຫຼ້າສຸດ",
+      outTitle: "ບັນທຶກການນຳອອກ / ການຂາຍ",
+      outHint: "ບັນທຶກຈຳນວນຂາຍປະຈຳວັນພ້ອມກະເຮັດວຽກ — ໃຊ້ຄຽງຄູ່ ຫຼື ແທນລາຍງານ Google Form ຂອງພະນັກງານ.",
+      recentOutTitle: "ການນຳອອກຫຼ້າສຸດ", btnSaveOut: "ບັນທຶກນຳອອກ",
+      reconcileTitle: "ກວດສອບສາງຕົວຈິງ",
+      reconcileHint: "ປຽບທຽບຈຳນວນຄົງເຫຼືອໃນລະບົບ (ຄຳນວນຈາກນຳເຂົ້າ – ນຳອອກ) ກັບຈຳນວນທີ່ນັບໄດ້ຈິງຢູ່ຮ້ານ. ເມື່ອບັນທຶກ, ລະບົບຈະປັບໃຫ້ກົງກັບຈຳນວນທີ່ນັບໄດ້ຈິງ.",
+      labelActualQty: "ຈຳນວນທີ່ນັບໄດ້ຈິງ (ຊອງ)", labelReconcileDate: "ວັນທີກວດສອບ",
+      labelNote: "ໝາຍເຫດ", btnSaveReconcile: "ບັນທຶກຜົນການກວດສອບ",
+      reconcileHistoryTitle: "ປະຫວັດການກວດສອບ",
+      reconcileSystemLabel: "ຈຳນວນຕາມລະບົບ", reconcileDiffLabel: "ສ່ວນຕ່າງ",
+      reconcileMatchLabel: "ກົງກັບລະບົບ", reconcileMatchShort: "ກົງກັນ",
+      reconcileSurplus: "ເກີນ {n} ຊອງ", reconcileDeficit: "ຂາດ {n} ຊອງ",
+      reconcileNoteDefaultMatch: "ສາງກົງກັນ", reconcileNoteDefaultAdjust: "ກວດສອບຕົວຈິງ",
+      shiftTitle: "ບັນທຶກຍອດຂາຍຊັກອົບຕໍ່ກະ",
+      shiftHint: "ບັນທຶກຍອດຂາຍບໍລິການຊັກອົບແຕ່ລະກະຂອງພະນັກງານແຕ່ລະຄົນ — ໃຊ້ສຳລັບຄຳນວນເງິນລາງວັນທ້າຍເດືອນ.",
+      labelDate: "ວັນທີ", labelShift: "ກະ", labelStaffOnShift: "ພະນັກງານປະຈຳກະ",
+      labelCash: "ເງິນສົດ (₭)", labelTransfer: "ໂອນເງິນ (₭)", labelTotalRevenue: "ຍອດຂາຍ",
+      btnSaveShift: "ບັນທຶກຍອດຂາຍກະ", recentShiftTitle: "ກະຫຼ້າສຸດ",
+      summaryTitle: "ສະຫຼຸບລາຍເດືອນ (ສຳລັບຄຳນວນລາງວັນ)",
+      summaryColStaff: "ພະນັກງານ", summaryColShifts: "ຈຳນວນກະ", summaryColTotal: "ຍອດຂາຍລວມ",
+      productFormTitleAdd: "ເພີ່ມສິນຄ້າ", productFormTitleEdit: "ແກ້ໄຂສິນຄ້າ",
+      labelProductName: "ຊື່ສິນຄ້າ", labelBrand: "ຍີ່ຫໍ້", labelCategory: "ປະເພດ",
+      labelLowStock: "ລະດັບເຕືອນ (ຊອງ)", labelInitStock: "ສາງເລີ່ມຕົ້ນ (ຊອງ)",
+      btnAddProduct: "ເພີ່ມສິນຄ້າ", btnUpdateProduct: "ອັບເດດສິນຄ້າ", btnCancel: "ຍົກເລີກ",
+      productsListTitle: "ລາຍຊື່ສິນຄ້າ",
+      productEditBtn: "ແກ້ໄຂ", productDeactivateBtn: "ຢຸດຂາຍ", productActivateBtn: "ເປີດໃຊ້ຄືນ",
+      tagInactiveProduct: "ຢຸດຂາຍ",
+      staffFormTitle: "ເພີ່ມພະນັກງານ",
+      staffFormHint: "ລາຍຊື່ນີ້ໃຊ້ສຳລັບເລືອກຊື່ເມື່ອບັນທຶກຂໍ້ມູນໃນແຖບອື່ນ. ເມື່ອພະນັກງານລາອອກ, ໃຫ້ໝາຍວ່າລາອອກແທນການລຶບອອກ ເພື່ອຮັກສາປະຫວັດການເຮັດວຽກຂອງເຂົາເຈົ້າໄວ້.",
+      labelStaffName: "ຊື່ພະນັກງານ", btnAddStaff: "ເພີ່ມພະນັກງານ", staffListTitle: "ລາຍຊື່ພະນັກງານ",
+      tagResigned: "ລາອອກແລ້ວ", btnMarkResigned: "ໝາຍວ່າລາອອກ", btnReactivateStaff: "ໃຫ້ກັບມາເຮັດວຽກ",
+      changePinTitle: "ປ່ຽນລະຫັດຜູ້ຈັດການ",
+      changePinHint: "ລະຫັດນີ້ໃຊ້ສຳລັບເຂົ້າສູ່ໂໝດຜູ້ຈັດການຢູ່ອຸປະກອນອື່ນ.",
+      currentPin: "ລະຫັດປັດຈຸບັນ", newPin: "ລະຫັດໃໝ່", confirmNewPin: "ພິມລະຫັດໃໝ່ອີກຄັ້ງ", changePinBtn: "ປ່ຽນລະຫັດ",
+      historyTitle: "ປະຫວັດການເຮັດລາຍການ",
+      filterAllProducts: "ສິນຄ້າທັງໝົດ", filterAllTypes: "ປະເພດທັງໝົດ",
+      typeIn: "ນຳເຂົ້າ", typeOut: "ນຳອອກ", typeAdjust: "ປັບປຸງ",
+      colDate: "ວັນທີ", colType: "ປະເພດ", colProduct: "ສິນຄ້າ", colQty: "ຈຳນວນ",
+      colPrice: "ລາຄາ", colTotal: "ມູນຄ່າ", colPaymentMethod: "ການຊຳລະ",
+      colBy: "ຜູ້ບັນທຶກ", colNote: "ໝາຍເຫດ",
+      btnDelete: "ລຶບ",
+      emptyProductsTitle: "ຍັງບໍ່ມີສິນຄ້າ", emptyProductsSub: "ເພີ່ມສິນຄ້າທຳອິດໂດຍໃຊ້ແບບຟອມຂ້າງເທິງ.",
+      emptyInTitle: "ຍັງບໍ່ມີການນຳເຂົ້າ", emptyOutTitle: "ຍັງບໍ່ມີການນຳອອກ",
+      emptyRecentSub: "ໃຊ້ແບບຟອມຂ້າງເທິງເພື່ອບັນທຶກ.",
+      emptyReconcileTitle: "ຍັງບໍ່ມີການກວດສອບ", emptyReconcileSub: "ດຳເນີນການກວດສອບຄັ້ງທຳອິດໂດຍໃຊ້ແບບຟອມຂ້າງເທິງ.",
+      emptyStaffTitle: "ຍັງບໍ່ມີພະນັກງານ", emptyStaffSub: "ເພີ່ມພະນັກງານທຳອິດໂດຍໃຊ້ແບບຟອມຂ້າງເທິງ.",
+      emptyShiftTitle: "ຍັງບໍ່ມີກະທີ່ບັນທຶກ", emptyShiftSub: "ໃຊ້ແບບຟອມຂ້າງເທິງເພື່ອບັນທຶກຍອດຂາຍກະທຳອິດ.",
+      emptySummaryNoMonth: "ເລືອກເດືອນເພື່ອເບິ່ງສະຫຼຸບຍອດຂາຍຕາມພະນັກງານ.",
+      emptySummaryMonth: "ບໍ່ມີກະໃນເດືອນທີ່ເລືອກ.", emptySummaryTitle: "ຍັງບໍ່ມີຂໍ້ມູນ",
+      emptyHistoryTitle: "ບໍ່ມີລາຍການ", emptyHistorySub: "ລອງປ່ຽນຕົວກອງ ຫຼື ເພີ່ມລາຍການໃໝ່.",
+      toastSavedIn: "ບັນທຶກການນຳເຂົ້າແລ້ວ", toastSavedOut: "ບັນທຶກການນຳອອກແລ້ວ", toastDeleted: "ລຶບລາຍການແລ້ວ",
+      toastReconcileMatch: "ຢືນຢັນສາງກົງກັນແລ້ວ", toastReconcileAdjusted: "ບັນທຶກການປັບປຸງສາງແລ້ວ",
+      toastProductAdded: "ເພີ່ມສິນຄ້າແລ້ວ", toastProductUpdated: "ອັບເດດສິນຄ້າແລ້ວ",
+      toastProductDeactivated: "ຢຸດຂາຍສິນຄ້ານີ້ແລ້ວ", toastProductActivated: "ເປີດໃຊ້ສິນຄ້ານີ້ຄືນແລ້ວ",
+      toastStaffAdded: "ເພີ່ມພະນັກງານແລ້ວ", toastStaffResigned: "ໝາຍວ່າລາອອກແລ້ວ",
+      toastStaffReactivated: "ໃຫ້ກັບມາເຮັດວຽກແລ້ວ", toastShiftSaved: "ບັນທຶກຍອດຂາຍກະແລ້ວ", toastShiftDeleted: "ລຶບແລ້ວ",
+      toastPinChanged: "ປ່ຽນລະຫັດຜູ້ຈັດການແລ້ວ", toastStorageError: "ບັນທຶກຂໍ້ມູນຜິດພາດ, ລອງໃໝ່",
+      toastConnectionError: "ເຊື່ອມຕໍ່ Google Sheets ບໍ່ໄດ້ — ກວດສອບອິນເຕີເນັດ ຫຼື ລິ້ງ API_URL",
+      alertSelectProduct: "ກະລຸນາເລືອກສິນຄ້າ", alertQtyPositive: "ຈຳນວນຕ້ອງຫຼາຍກວ່າ 0",
+      alertSelectStaffFirst: "ກະລຸນາເລືອກຊື່ຂອງທ່ານຢູ່ມຸມເທິງກ່ອນບັນທຶກ",
+      alertOutExceedsStock: "ສາງໃນລະບົບຕອນນີ້ມີພຽງ {current} ຊອງ, ໜ້ອຍກວ່າຈຳນວນທີ່ນຳອອກ ({qty}). ຍັງຕ້ອງການບັນທຶກບໍ?",
+      alertEnterActualQty: "ກະລຸນາປ້ອນຈຳນວນທີ່ນັບໄດ້ຈິງ", alertEnterProductName: "ກະລຸນາປ້ອນຊື່ສິນຄ້າ",
+      alertEnterStaffName: "ກະລຸນາປ້ອນຊື່ພະນັກງານ", alertStaffDuplicate: "ພະນັກງານນີ້ມີຢູ່ໃນລາຍຊື່ແລ້ວ",
+      alertSelectShiftStaff: "ກະລຸນາເລືອກພະນັກງານປະຈຳກະ",
+      alertEnterShiftRevenue: "ກະລຸນາປ້ອນຍອດຂາຍ (ເງິນສົດ ຫຼື ໂອນເງິນ)",
+      confirmDeleteTx: "ລຶບລາຍການນີ້ບໍ?", confirmDeleteShift: "ລຶບກະນີ້ບໍ?",
+      phChooseProduct: "— ເລືອກສິນຄ້າ —", phChooseStaff: "— ເລືອກພະນັກງານ —",
+      gateTitle: "ທ່ານກຳລັງໃຊ້ແອັບໃນບົດບາດໃດ?",
+      roleStaffBtn: "ຂ້ອຍແມ່ນພະນັກງານ", roleAdminBtn: "ຂ້ອຍແມ່ນຜູ້ຈັດການ",
+      pinHintEnter: "ປ້ອນລະຫັດຜູ້ຈັດການ",
+      pinHintSetup: "ໃຊ້ຄັ້ງທຳອິດ — ສ້າງລະຫັດຜູ້ຈັດການໃໝ່ (ຢ່າງໜ້ອຍ 4 ໂຕເລກ), ປ້ອນອີກຄັ້ງເພື່ອຢືນຢັນ",
+      pinSubmitBtn: "ເຂົ້າ",
+      pinErrorEmpty: "ກະລຸນາປ້ອນລະຫັດ", pinErrorTooShort: "ລະຫັດຕ້ອງມີຢ່າງໜ້ອຍ 4 ໂຕ",
+      pinErrorMismatch: "ລະຫັດທີ່ປ້ອນສອງຄັ້ງບໍ່ກົງກັນ", pinErrorWrong: "ລະຫັດບໍ່ຖືກຕ້ອງ, ລອງໃໝ່",
+      tabReport: "ບົດລາຍງານ",
+      reportTitle: "ບົດລາຍງານປະຈຳວັນ",
+      reportOutByProductTitle: "ນຳອອກຕາມສິນຄ້າ",
+      reportInByProductTitle: "ນຳເຂົ້າຕາມສິນຄ້າ",
+      reportShiftTitle: "ຍອດຂາຍຊັກອົບຕາມກະ",
+      reportStatOutLabel: "ລາຍຮັບຈາກການຂາຍ",
+      reportStatShiftLabel: "ຍອດຂາຍຊັກອົບ",
+      reportStatTotalLabel: "ລາຍຮັບລວມໃນວັນ",
+      reportStatInLabel: "ຄ່າໃຊ້ຈ່າຍນຳເຂົ້າ",
+      emptyReportOutTitle: "ບໍ່ມີການນຳອອກໃນວັນນີ້",
+      emptyReportInTitle: "ບໍ່ມີການນຳເຂົ້າໃນວັນນີ້",
+      emptyReportShiftTitle: "ບໍ່ມີຍອດຂາຍກະໃນວັນນີ້",
+      emptyReportSub: "ເລືອກວັນອື່ນເພື່ອເບິ່ງຂໍ້ມູນ.",
+      sessionHeaderHint: "ຕັ້ງວັນທີ ແລະ ກະຄັ້ງດຽວສຳລັບທັງຊ່ວງເຮັດວຽກ, ບໍ່ຕ້ອງປ້ອນຄືນທຸກຄັ້ງທີ່ນຳອອກ.",
+      labelSellPrice: "ລາຄາຂາຍມາດຕະຖານ (₭/ຊອງ)",
+      sellPriceColon: "ລາຄາຂາຍ:"
+    }
+  };
+
+  let products = [];
+  let transactions = [];
+  let staffName = '';
+  let staffList = [];
+  let shiftRevenue = [];
+  let editingProductId = null;
+  let lang = 'vi';
+  let role = '';
+  let adminPin = '';
+
+  function $(s){ return document.querySelector(s); }
+  function uid(){ return 't'+Date.now()+Math.random().toString(36).slice(2,8); }
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function formatDate(d){
+    if(!d) return '';
+    const parts = d.split('-');
+    if(parts.length!==3) return d;
+    return parts[2]+'/'+parts[1]+'/'+parts[0];
+  }
+  function formatMoney(n){
+    if(n===undefined||n===null||isNaN(n)||n===0) return '0 ₭';
+    const rounded = Math.round(n);
+    return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₭';
+  }
+  function paymentLabel(p){
+    if(p==='cash') return t('paymentCash');
+    if(p==='transfer') return t('paymentTransfer');
+    return '';
+  }
+  function escapeHtml(s){
+    return String(s===undefined||s===null ? '' : s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function t(key, vars){
+    let s = (I18N[lang] && I18N[lang][key]!==undefined) ? I18N[lang][key] : (I18N.vi[key]!==undefined ? I18N.vi[key] : key);
+    if(vars){
+      Object.keys(vars).forEach(k=>{ s = s.split('{'+k+'}').join(vars[k]); });
+    }
+    return s;
+  }
+  function emptyState(title, sub){
+    return '<div class="empty-state"><div class="empty-title">'+escapeHtml(title)+'</div><div class="empty-sub">'+escapeHtml(sub)+'</div></div>';
+  }
+  function toast(msg){
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
+  }
+
+  /* ---------- storage config ----------
+     1. Tạo Google Sheet + dán đoạn code Apps Script (xem file apps-script-backend.gs đi kèm)
+     2. Deploy as Web App, copy đường link "exec" dán vào API_URL bên dưới
+     3. Lưu file, mở lại trang là dùng được
+  -------------------------------------- */
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzYfmZ2k_hFOoFl8EEzTTtjaWmFhOE6O-1cgp51moJUC9IpPiYm7VZb6xiRb_4PiMCx/exec';
+
+  function localGet(key, fallback){
+    try{
+      const v = localStorage.getItem(key);
+      return v===null ? fallback : v;
+    }catch(e){ return fallback; }
+  }
+  function localSet(key, value){
+    try{ localStorage.setItem(key, value); }catch(e){ console.error(e); }
+  }
+  async function apiGet(key){
+    const res = await fetch(API_URL + '?key=' + encodeURIComponent(key));
+    if(!res.ok) throw new Error('API GET failed: '+res.status);
+    const data = await res.json();
+    return data.value;
+  }
+  async function apiSet(key, value){
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key, value })
+    });
+    if(!res.ok) throw new Error('API POST failed: '+res.status);
+    return await res.json();
+  }
+
+  /* ---------- storage ---------- */
+  async function loadLangPref(){
+    lang = localGet('app-lang', 'vi');
+  }
+  async function loadRole(){
+    role = localGet('app-role', '');
+  }
+  async function loadAdminPin(){
+    try{
+      const v = await apiGet('admin-pin');
+      adminPin = v || '';
+    }catch(e){ console.error(e); adminPin=''; toast(t('toastConnectionError')); }
+  }
+  async function saveAdminPin(){
+    try{ await apiSet('admin-pin', adminPin); }
+    catch(e){ console.error(e); toast(t('toastStorageError')); }
+  }
+  async function loadStaffName(){
+    staffName = localGet('staff-name', '');
+  }
+  async function saveStaffName(){
+    staffName = $('#staffNameSelect').value;
+    localSet('staff-name', staffName);
+  }
+  async function loadProducts(){
+    try{
+      const v = await apiGet('products');
+      products = v ? JSON.parse(v) : [];
+    }catch(e){ console.error(e); products = []; toast(t('toastConnectionError')); }
+  }
+  async function saveProducts(){
+    try{ await apiSet('products', JSON.stringify(products)); }
+    catch(e){ console.error(e); toast(t('toastStorageError')); }
+  }
+  async function loadTransactions(){
+    try{
+      const v = await apiGet('transactions');
+      transactions = v ? JSON.parse(v) : [];
+    }catch(e){ console.error(e); transactions = []; toast(t('toastConnectionError')); }
+  }
+  async function saveTransactions(){
+    try{ await apiSet('transactions', JSON.stringify(transactions)); }
+    catch(e){ console.error(e); toast(t('toastStorageError')); }
+  }
+  async function loadStaffList(){
+    try{
+      const v = await apiGet('staff');
+      staffList = v ? JSON.parse(v) : [];
+    }catch(e){ console.error(e); staffList = []; toast(t('toastConnectionError')); }
+  }
+  async function saveStaffList(){
+    try{ await apiSet('staff', JSON.stringify(staffList)); }
+    catch(e){ console.error(e); toast(t('toastStorageError')); }
+  }
+  async function loadShiftRevenue(){
+    try{
+      const v = await apiGet('shift-revenue');
+      shiftRevenue = v ? JSON.parse(v) : [];
+    }catch(e){ console.error(e); shiftRevenue = []; toast(t('toastConnectionError')); }
+  }
+  async function saveShiftRevenue(){
+    try{ await apiSet('shift-revenue', JSON.stringify(shiftRevenue)); }
+    catch(e){ console.error(e); toast(t('toastStorageError')); }
+  }
+
+  /* ---------- stock calc ---------- */
+  function stockOf(productId){
+    let s = 0;
+    for(const t of transactions){
+      if(t.productId !== productId) continue;
+      if(t.type==='in') s += t.qty;
+      else if(t.type==='out') s -= t.qty;
+      else if(t.type==='adjust') s += t.qty;
+    }
+    return s;
+  }
+
+  /* ---------- selects ---------- */
+  function fillProductSelects(){
+    const active = products.filter(p=>p.active!==false);
+    const groups = {};
+    active.forEach(p=>{
+      const cat = p.category || 'Khác';
+      (groups[cat] = groups[cat]||[]).push(p);
+    });
+    const catNames = Object.keys(groups).sort();
+    let opts = '<option value="">'+t('phChooseProduct')+'</option>';
+    for(const cat of catNames){
+      opts += '<optgroup label="'+escapeHtml(cat)+'">';
+      groups[cat].slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(p=>{
+        opts += '<option value="'+p.id+'" data-price="'+(p.sellPrice||0)+'">'+escapeHtml(p.name)+(p.brand?' · '+escapeHtml(p.brand):'')+'</option>';
+      });
+      opts += '</optgroup>';
+    }
+    $('#inProductSelect').innerHTML = opts;
+    $('#outProductSelect').innerHTML = opts;
+    $('#reconcileProductSelect').innerHTML = opts;
+    $('#historyProductFilter').innerHTML = '<option value="">'+t('filterAllProducts')+'</option>' + products.map(p=>
+      '<option value="'+p.id+'">'+escapeHtml(p.name)+'</option>'
+    ).join('');
+  }
+
+  function fillStaffSelects(){
+    const active = staffList.filter(s=>s.active!==false);
+    const opts = '<option value="">'+t('phChooseStaff')+'</option>' + active.map(s=>
+      '<option value="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'</option>'
+    ).join('');
+    $('#staffNameSelect').innerHTML = opts;
+    const sel = $('#staffNameSelect');
+    const exists = Array.from(sel.options).some(o=>o.value===staffName);
+    sel.value = exists ? staffName : '';
+    if(!exists) staffName = '';
+  }
+
+  /* ---------- overview ---------- */
+  function renderOverview(){
+    const active = products.filter(p=>p.active!==false);
+    const today = todayStr();
+    const todayCount = transactions.filter(t=>t.date===today).length;
+    const lowCount = active.filter(p=> stockOf(p.id) <= (p.lowStock??5) ).length;
+    const todayOutRevenue = transactions.filter(t=>t.type==='out' && t.date===today).reduce((sum,t)=> sum+(t.total||0), 0);
+    const todayShiftRevenue = shiftRevenue.filter(s=>s.date===today).reduce((sum,s)=> sum+(s.total||0), 0);
+    $('#statTotalProducts').textContent = active.length;
+    $('#statLowStock').textContent = lowCount;
+    $('#statTodayTx').textContent = todayCount;
+    $('#statTodayRevenue').textContent = formatMoney(todayOutRevenue + todayShiftRevenue);
+
+    if(active.length===0){
+      $('#overviewList').innerHTML = emptyState(t('overviewEmptyTitle'), t('overviewEmptySub'));
+      return;
+    }
+    const groups = {};
+    active.forEach(p=>{
+      const cat = p.category || 'Khác';
+      (groups[cat] = groups[cat]||[]).push(p);
+    });
+    const catNames = Object.keys(groups).sort();
+    let html = '';
+    for(const cat of catNames){
+      html += '<div class="cat-group"><h3 class="cat-title">'+escapeHtml(cat)+'</h3><div class="product-grid">';
+      const list = groups[cat].slice().sort((a,b)=> stockOf(a.id)-stockOf(b.id));
+      for(const p of list){
+        const stock = stockOf(p.id);
+        const low = p.lowStock ?? 5;
+        let status='ok', label=t('statusOk');
+        if(stock<=0){ status='out'; label=t('statusOut'); }
+        else if(stock<=low){ status='low'; label=t('statusLow'); }
+        html += '<div class="product-card status-'+status+'">'
+          + '<div class="product-card-top"><span class="product-name">'+escapeHtml(p.name)+'</span>'
+          + '<span class="badge badge-'+status+'">'+label+'</span></div>'
+          + (p.brand ? '<div class="product-brand">'+escapeHtml(p.brand)+'</div>' : '')
+          + '<div class="product-stock"><span class="stock-num">'+stock+'</span><span class="stock-unit">'+t('stockUnit')+'</span></div>'
+          + '</div>';
+      }
+      html += '</div></div>';
+    }
+    $('#overviewList').innerHTML = html;
+  }
+
+  /* ---------- recent in/out lists ---------- */
+  function renderRecent(type, containerId, limit){
+    limit = limit || 8;
+    const list = transactions.filter(t=>t.type===type)
+      .sort((a,b)=> b.date.localeCompare(a.date) || (b.ts-a.ts))
+      .slice(0, limit);
+    const el = $('#'+containerId);
+    if(list.length===0){
+      el.innerHTML = emptyState(
+        type==='in' ? t('emptyInTitle') : t('emptyOutTitle'),
+        t('emptyRecentSub')
+      );
+      return;
+    }
+    el.innerHTML = list.map(t2=>{
+      const p = products.find(x=>x.id===t2.productId);
+      const moneyPart = t2.total ? (' · '+formatMoney(t2.total)+(t2.payment? ' ('+paymentLabel(t2.payment)+')':'')) : '';
+      const caPart = t2.ca ? (' · '+escapeHtml(t2.ca)) : '';
+      return '<div class="list-row"><div class="list-row-main">'
+        + '<div class="list-row-title">'+escapeHtml(p?p.name:'—')+' <span class="muted">· '+t2.qty+' '+t('stockUnit')+moneyPart+caPart+'</span></div>'
+        + '<div class="list-row-sub">'+formatDate(t2.date)+' · '+escapeHtml(t2.by||'')+(t2.note? ' · '+escapeHtml(t2.note):'')+'</div>'
+        + '</div><div class="list-row-actions"><button class="btn-icon-sm" onclick="window.__inv.deleteTransaction(\''+t2.id+'\')">'+t('btnDelete')+'</button></div></div>';
+    }).join('');
+  }
+
+  /* ---------- reconcile ---------- */
+  function updateReconcilePreview(){
+    const productId = $('#reconcileProductSelect').value;
+    const previewEl = $('#reconcilePreview');
+    if(!productId){ previewEl.innerHTML=''; return; }
+    const system = stockOf(productId);
+    let html = '<div class="reconcile-row"><span>'+t('reconcileSystemLabel')+'</span><strong>'+system+' '+t('stockUnit')+'</strong></div>';
+    const actualVal = $('#reconcileActualInput').value;
+    if(actualVal !== ''){
+      const actual = parseFloat(actualVal);
+      const delta = actual - system;
+      let cls='match', label=t('reconcileMatchLabel');
+      if(delta>0){ cls='surplus'; label=t('reconcileSurplus',{n:delta}); }
+      else if(delta<0){ cls='deficit'; label=t('reconcileDeficit',{n:Math.abs(delta)}); }
+      html += '<div class="reconcile-row"><span>'+t('reconcileDiffLabel')+'</span><strong class="reconcile-'+cls+'">'+label+'</strong></div>';
+    }
+    previewEl.innerHTML = html;
+  }
+
+  function renderReconcileHistory(){
+    const list = transactions.filter(t=>t.type==='adjust')
+      .sort((a,b)=> b.date.localeCompare(a.date) || (b.ts-a.ts))
+      .slice(0,10);
+    const el = $('#reconcileHistory');
+    if(list.length===0){
+      el.innerHTML = emptyState(t('emptyReconcileTitle'), t('emptyReconcileSub'));
+      return;
+    }
+    el.innerHTML = list.map(t2=>{
+      const p = products.find(x=>x.id===t2.productId);
+      const cls = t2.qty>0?'surplus':(t2.qty<0?'deficit':'match');
+      const label = t2.qty>0?t('reconcileSurplus',{n:t2.qty}):(t2.qty<0?t('reconcileDeficit',{n:Math.abs(t2.qty)}):t('reconcileMatchShort'));
+      return '<div class="list-row"><div class="list-row-main">'
+        + '<div class="list-row-title">'+escapeHtml(p?p.name:'—')+' <span class="reconcile-'+cls+'">· '+label+'</span></div>'
+        + '<div class="list-row-sub">'+formatDate(t2.date)+' · '+escapeHtml(t2.by||'')+(t2.note? ' · '+escapeHtml(t2.note):'')+'</div>'
+        + '</div><div class="list-row-actions"><button class="btn-icon-sm" onclick="window.__inv.deleteTransaction(\''+t2.id+'\')">'+t('btnDelete')+'</button></div></div>';
+    }).join('');
+  }
+
+  function saveReconciliation(e){
+    e.preventDefault();
+    const productId = $('#reconcileProductSelect').value;
+    const actual = parseFloat($('#reconcileActualInput').value);
+    if(!productId){ alert(t('alertSelectProduct')); return; }
+    if(isNaN(actual)){ alert(t('alertEnterActualQty')); return; }
+    if(!staffName){ alert(t('alertSelectStaffFirst')); return; }
+    const system = stockOf(productId);
+    const delta = actual - system;
+    const date = $('#reconcileDateInput').value || todayStr();
+    const note = $('#reconcileNoteInput').value.trim();
+    transactions.push({
+      id: uid(), type:'adjust', productId, qty: delta, date,
+      note: note || (delta===0 ? t('reconcileNoteDefaultMatch') : t('reconcileNoteDefaultAdjust')),
+      by: staffName || '—', ts: Date.now()
+    });
+    saveTransactions();
+    $('#reconcileActualInput').value=''; $('#reconcileNoteInput').value='';
+    $('#reconcilePreview').innerHTML='';
+    renderAll();
+    toast(delta===0 ? t('toastReconcileMatch') : t('toastReconcileAdjusted'));
+  }
+
+  /* ---------- products ---------- */
+  function renderProducts(){
+    if(products.length===0){
+      $('#productsList').innerHTML = emptyState(t('emptyProductsTitle'), t('emptyProductsSub'));
+      return;
+    }
+    const sorted = products.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    $('#productsList').innerHTML = sorted.map(p=>{
+      const stock = stockOf(p.id);
+      return '<div class="list-row '+(p.active===false?'inactive':'')+'"><div class="list-row-main">'
+        + '<div class="list-row-title">'+escapeHtml(p.name)+(p.brand?' <span class="muted">· '+escapeHtml(p.brand)+'</span>':'')+'</div>'
+        + '<div class="list-row-sub">'+escapeHtml(p.category||'—')+' · '+t('labelStockColon')+' '+stock+' '+t('stockUnit')+' · '+t('labelThresholdColon')+' '+(p.lowStock??5)+' '+t('stockUnit')
+        + (p.sellPrice ? ' · '+t('sellPriceColon')+' '+formatMoney(p.sellPrice) : '')
+        + (p.active===false ? ' · <span class="tag-inactive">'+t('tagInactiveProduct')+'</span>' : '') + '</div>'
+        + '</div><div class="list-row-actions">'
+        + '<button class="btn-icon" onclick="window.__inv.editProduct(\''+p.id+'\')">'+t('productEditBtn')+'</button>'
+        + '<button class="btn-icon" onclick="window.__inv.toggleProductActive(\''+p.id+'\')">'+(p.active===false?t('productActivateBtn'):t('productDeactivateBtn'))+'</button>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  function submitProductForm(e){
+    e.preventDefault();
+    const name = $('#productNameInput').value.trim();
+    const brand = $('#productBrandInput').value.trim();
+    const category = $('#productCategoryInput').value.trim() || 'Khác';
+    const lowStock = parseFloat($('#productLowStockInput').value);
+    const sellPrice = parseFloat($('#productSellPriceInput').value) || 0;
+    const initStock = parseFloat($('#productInitStockInput').value) || 0;
+    if(!name){ alert(t('alertEnterProductName')); return; }
+
+    if(editingProductId){
+      const p = products.find(x=>x.id===editingProductId);
+      if(p){ Object.assign(p, {name, brand, category, lowStock: isNaN(lowStock)?5:lowStock, sellPrice}); }
+      saveProducts();
+      cancelEditProduct();
+      renderAll();
+      toast(t('toastProductUpdated'));
+      return;
+    }
+
+    const id = uid();
+    products.push({id, name, brand, category, lowStock: isNaN(lowStock)?5:lowStock, sellPrice, active:true});
+    saveProducts();
+    if(initStock>0){
+      transactions.push({id:uid(), type:'in', productId:id, qty:initStock, date: todayStr(), note:'Tồn kho ban đầu', by: staffName||'—', ts:Date.now()});
+      saveTransactions();
+    }
+    $('#productForm').reset();
+    $('#productLowStockInput').value = 5;
+    $('#productInitStockInput').value = 0;
+    renderAll();
+    toast(t('toastProductAdded'));
+  }
+
+  function editProduct(id){
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    editingProductId = id;
+    $('#productNameInput').value = p.name;
+    $('#productBrandInput').value = p.brand || '';
+    $('#productCategoryInput').value = p.category || '';
+    $('#productLowStockInput').value = p.lowStock ?? 5;
+    $('#productSellPriceInput').value = p.sellPrice || '';
+    $('#productFormTitle').setAttribute('data-i18n','productFormTitleEdit');
+    $('#productFormTitle').textContent = t('productFormTitleEdit');
+    $('#productFormSubmitBtn').setAttribute('data-i18n','btnUpdateProduct');
+    $('#productFormSubmitBtn').textContent = t('btnUpdateProduct');
+    $('#productCancelEditBtn').classList.remove('hidden');
+    $('#productInitStockField').classList.add('hidden');
+    switchTab('products');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function cancelEditProduct(){
+    editingProductId = null;
+    $('#productForm').reset();
+    $('#productLowStockInput').value = 5;
+    $('#productSellPriceInput').value = '';
+    $('#productInitStockInput').value = 0;
+    $('#productFormTitle').setAttribute('data-i18n','productFormTitleAdd');
+    $('#productFormTitle').textContent = t('productFormTitleAdd');
+    $('#productFormSubmitBtn').setAttribute('data-i18n','btnAddProduct');
+    $('#productFormSubmitBtn').textContent = t('btnAddProduct');
+    $('#productCancelEditBtn').classList.add('hidden');
+    $('#productInitStockField').classList.remove('hidden');
+  }
+
+  function toggleProductActive(id){
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    p.active = !(p.active!==false);
+    saveProducts();
+    renderAll();
+    toast(p.active===false ? t('toastProductDeactivated') : t('toastProductActivated'));
+  }
+
+  /* ---------- staff ---------- */
+  function renderStaffList(){
+    if(staffList.length===0){
+      $('#staffListContainer').innerHTML = emptyState(t('emptyStaffTitle'), t('emptyStaffSub'));
+      return;
+    }
+    const sorted = staffList.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    $('#staffListContainer').innerHTML = sorted.map(s=>{
+      return '<div class="list-row '+(s.active===false?'inactive':'')+'"><div class="list-row-main">'
+        + '<div class="list-row-title">'+escapeHtml(s.name)+(s.active===false?' <span class="tag-inactive">· '+t('tagResigned')+'</span>':'')+'</div>'
+        + '</div><div class="list-row-actions">'
+        + '<button class="btn-icon" onclick="window.__inv.toggleStaffActive(\''+s.id+'\')">'+(s.active===false?t('btnReactivateStaff'):t('btnMarkResigned'))+'</button>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  function submitStaffForm(e){
+    e.preventDefault();
+    const name = $('#staffNameInputNew').value.trim();
+    if(!name){ alert(t('alertEnterStaffName')); return; }
+    const dup = staffList.some(s=>s.name.toLowerCase()===name.toLowerCase() && s.active!==false);
+    if(dup){ alert(t('alertStaffDuplicate')); return; }
+    staffList.push({id:uid(), name, active:true});
+    saveStaffList();
+    $('#staffForm').reset();
+    renderAll();
+    toast(t('toastStaffAdded'));
+  }
+
+  function toggleStaffActive(id){
+    const s = staffList.find(x=>x.id===id);
+    if(!s) return;
+    s.active = !(s.active!==false);
+    saveStaffList();
+    renderAll();
+    toast(s.active===false ? t('toastStaffResigned') : t('toastStaffReactivated'));
+  }
+
+  /* ---------- in/out transactions ---------- */
+  function updateInTotal(){
+    const qty = parseFloat($('#inQtyInput').value) || 0;
+    const price = parseFloat($('#inPriceInput').value) || 0;
+    const total = qty*price;
+    $('#inTotalDisplay').textContent = total>0 ? formatMoney(total) : '—';
+  }
+  function updateOutTotal(){
+    const qty = parseFloat($('#outQtyInput').value) || 0;
+    const price = parseFloat($('#outPriceInput').value) || 0;
+    const total = qty*price;
+    $('#outTotalDisplay').textContent = total>0 ? formatMoney(total) : '—';
+  }
+
+  function submitStockForm(type){
+    const selectId = type==='in' ? 'inProductSelect' : 'outProductSelect';
+    const qtyId = type==='in' ? 'inQtyInput' : 'outQtyInput';
+    const dateId = type==='in' ? 'inDateInput' : 'outDateInput';
+    const noteId = type==='in' ? 'inNoteInput' : 'outNoteInput';
+    const priceId = type==='in' ? 'inPriceInput' : 'outPriceInput';
+    const paymentId = type==='in' ? 'inPaymentSelect' : 'outPaymentSelect';
+    const totalDisplayId = type==='in' ? 'inTotalDisplay' : 'outTotalDisplay';
+    const caId = type==='out' ? 'outCaInput' : null;
+    const productId = $('#'+selectId).value;
+    const qty = parseFloat($('#'+qtyId).value);
+    const date = $('#'+dateId).value || todayStr();
+    const note = $('#'+noteId).value.trim();
+    const price = parseFloat($('#'+priceId).value) || 0;
+    const payment = $('#'+paymentId).value;
+    const ca = caId ? $('#'+caId).value.trim() : '';
+    if(!productId){ alert(t('alertSelectProduct')); return; }
+    if(!qty || qty<=0){ alert(t('alertQtyPositive')); return; }
+    if(!staffName){ alert(t('alertSelectStaffFirst')); return; }
+    if(type==='out'){
+      const current = stockOf(productId);
+      if(qty>current){
+        if(!confirm(t('alertOutExceedsStock',{current:current, qty:qty}))) return;
+      }
+    }
+    const total = price>0 ? qty*price : 0;
+    transactions.push({id:uid(), type, productId, qty, date, note, price, total, payment, ca, by: staffName||'—', ts:Date.now()});
+    saveTransactions();
+    $('#'+selectId).value=''; $('#'+qtyId).value=''; $('#'+noteId).value=''; $('#'+priceId).value=''; $('#'+paymentId).value='';
+    $('#'+totalDisplayId).textContent='—';
+    renderAll();
+    toast(type==='in' ? t('toastSavedIn') : t('toastSavedOut'));
+  }
+
+  function deleteTransaction(id){
+    if(!confirm(t('confirmDeleteTx'))) return;
+    transactions = transactions.filter(t=>t.id!==id);
+    saveTransactions();
+    renderAll();
+    toast(t('toastDeleted'));
+  }
+
+  /* ---------- history ---------- */
+  function renderHistory(){
+    const productFilter = $('#historyProductFilter').value;
+    const typeFilter = $('#historyTypeFilter').value;
+    const fromDate = $('#historyFromDate').value;
+    const toDate = $('#historyToDate').value;
+    let list = transactions.slice();
+    if(productFilter) list = list.filter(t=>t.productId===productFilter);
+    if(typeFilter) list = list.filter(t=>t.type===typeFilter);
+    if(fromDate) list = list.filter(t=>t.date>=fromDate);
+    if(toDate) list = list.filter(t=>t.date<=toDate);
+    list.sort((a,b)=> b.date.localeCompare(a.date) || (b.ts-a.ts));
+
+    if(list.length===0){
+      $('#historyTable').innerHTML = emptyState(t('emptyHistoryTitle'), t('emptyHistorySub'));
+      return;
+    }
+    const typeLabelMap = {in:t('typeIn'), out:t('typeOut'), adjust:t('typeAdjust')};
+    let rows = '';
+    for(const tx of list){
+      const p = products.find(x=>x.id===tx.productId);
+      const qtyDisplay = tx.type==='adjust' ? ((tx.qty>0?'+':'')+tx.qty) : tx.qty;
+      rows += '<tr>'
+        + '<td>'+formatDate(tx.date)+'</td>'
+        + '<td><span class="tx-type tx-'+tx.type+'">'+typeLabelMap[tx.type]+'</span></td>'
+        + '<td>'+escapeHtml(p?p.name:'—')+'</td>'
+        + '<td>'+qtyDisplay+'</td>'
+        + '<td>'+(tx.ca ? escapeHtml(tx.ca) : '—')+'</td>'
+        + '<td>'+(tx.price ? formatMoney(tx.price) : '—')+'</td>'
+        + '<td>'+(tx.total ? formatMoney(tx.total) : '—')+'</td>'
+        + '<td>'+(tx.payment ? paymentLabel(tx.payment) : '—')+'</td>'
+        + '<td>'+escapeHtml(tx.by||'')+'</td>'
+        + '<td class="muted">'+escapeHtml(tx.note||'')+'</td>'
+        + '<td><button class="btn-icon-sm" onclick="window.__inv.deleteTransaction(\''+tx.id+'\')">'+t('btnDelete')+'</button></td>'
+        + '</tr>';
+    }
+    $('#historyTable').innerHTML = '<div class="table-wrap"><table><thead><tr>'
+      + '<th>'+t('colDate')+'</th><th>'+t('colType')+'</th><th>'+t('colProduct')+'</th><th>'+t('colQty')+'</th>'
+      + '<th>'+t('labelShift')+'</th><th>'+t('colPrice')+'</th><th>'+t('colTotal')+'</th><th>'+t('colPaymentMethod')+'</th>'
+      + '<th>'+t('colBy')+'</th><th>'+t('colNote')+'</th><th></th>'
+      + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  /* ---------- shift revenue ---------- */
+  function updateShiftTotal(){
+    const cash = parseFloat($('#shiftCashInput').value) || 0;
+    const transfer = parseFloat($('#shiftTransferInput').value) || 0;
+    $('#shiftTotalDisplay').textContent = formatMoney(cash+transfer);
+  }
+
+  function submitShiftForm(e){
+    e.preventDefault();
+    const date = $('#outDateInput').value || todayStr();
+    const ca = $('#outCaInput').value.trim();
+    const cash = parseFloat($('#shiftCashInput').value) || 0;
+    const transfer = parseFloat($('#shiftTransferInput').value) || 0;
+    const note = $('#shiftNoteInput').value.trim();
+    if(!staffName){ alert(t('alertSelectStaffFirst')); return; }
+    if(cash<=0 && transfer<=0){ alert(t('alertEnterShiftRevenue')); return; }
+    const total = cash+transfer;
+    shiftRevenue.push({id:uid(), date, ca, staff: staffName, cash, transfer, total, note, by: staffName, ts:Date.now()});
+    saveShiftRevenue();
+    $('#shiftForm').reset();
+    $('#shiftCashInput').value = 0; $('#shiftTransferInput').value = 0;
+    $('#shiftTotalDisplay').textContent = '0 ₭';
+    renderAll();
+    toast(t('toastShiftSaved'));
+  }
+
+  function deleteShift(id){
+    if(!confirm(t('confirmDeleteShift'))) return;
+    shiftRevenue = shiftRevenue.filter(s=>s.id!==id);
+    saveShiftRevenue();
+    renderAll();
+    toast(t('toastShiftDeleted'));
+  }
+
+  function renderShiftRecent(){
+    const list = shiftRevenue.slice().sort((a,b)=> b.date.localeCompare(a.date) || (b.ts-a.ts)).slice(0,10);
+    const el = $('#shiftRecentList');
+    if(list.length===0){
+      el.innerHTML = emptyState(t('emptyShiftTitle'), t('emptyShiftSub'));
+      return;
+    }
+    el.innerHTML = list.map(s=>{
+      return '<div class="list-row"><div class="list-row-main">'
+        + '<div class="list-row-title">'+escapeHtml(s.staff)+(s.ca? ' · '+escapeHtml(s.ca):'')+' <span class="muted">· '+formatMoney(s.total)+'</span></div>'
+        + '<div class="list-row-sub">'+formatDate(s.date)+' · '+t('paymentCash')+' '+formatMoney(s.cash)+' · '+t('paymentTransfer')+' '+formatMoney(s.transfer)+(s.note? ' · '+escapeHtml(s.note):'')+'</div>'
+        + '</div><div class="list-row-actions"><button class="btn-icon-sm" onclick="window.__inv.deleteShift(\''+s.id+'\')">'+t('btnDelete')+'</button></div></div>';
+    }).join('');
+  }
+
+  function renderShiftSummary(){
+    const month = $('#shiftSummaryMonth').value;
+    let list = shiftRevenue.slice();
+    if(month) list = list.filter(s=>s.date && s.date.startsWith(month));
+    if(list.length===0){
+      $('#shiftSummaryTable').innerHTML = emptyState(t('emptySummaryTitle'), month ? t('emptySummaryMonth') : t('emptySummaryNoMonth'));
+      return;
+    }
+    const byStaff = {};
+    for(const s of list){
+      const key = s.staff || '—';
+      if(!byStaff[key]) byStaff[key] = {shifts:0, cash:0, transfer:0, total:0};
+      byStaff[key].shifts++;
+      byStaff[key].cash += s.cash;
+      byStaff[key].transfer += s.transfer;
+      byStaff[key].total += s.total;
+    }
+    const rows = Object.keys(byStaff).sort((a,b)=> byStaff[b].total - byStaff[a].total).map(name=>{
+      const r = byStaff[name];
+      return '<tr><td>'+escapeHtml(name)+'</td><td>'+r.shifts+'</td><td>'+formatMoney(r.cash)+'</td><td>'+formatMoney(r.transfer)+'</td><td><strong>'+formatMoney(r.total)+'</strong></td></tr>';
+    }).join('');
+    $('#shiftSummaryTable').innerHTML = '<div class="table-wrap"><table><thead><tr>'
+      + '<th>'+t('summaryColStaff')+'</th><th>'+t('summaryColShifts')+'</th><th>'+t('paymentCash')+'</th><th>'+t('paymentTransfer')+'</th><th>'+t('summaryColTotal')+'</th>'
+      + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  /* ---------- change pin ---------- */
+  function submitChangePin(e){
+    e.preventDefault();
+    const cur = $('#currentPinInput').value.trim();
+    const next = $('#newPinInput').value.trim();
+    const confirm2 = $('#confirmNewPinInput').value.trim();
+    if(cur!==adminPin){ alert(t('pinErrorWrong')); return; }
+    if(next.length<4){ alert(t('pinErrorTooShort')); return; }
+    if(next!==confirm2){ alert(t('pinErrorMismatch')); return; }
+    adminPin = next;
+    saveAdminPin();
+    $('#changePinForm').reset();
+    toast(t('toastPinChanged'));
+  }
+
+  /* ---------- daily report ---------- */
+  function renderReport(){
+    const date = $('#reportDate').value || todayStr();
+    const outTx = transactions.filter(tx=>tx.type==='out' && tx.date===date);
+    const inTx = transactions.filter(tx=>tx.type==='in' && tx.date===date);
+    const shifts = shiftRevenue.filter(s=>s.date===date);
+
+    const outTotal = outTx.reduce((sum,tx)=>sum+(tx.total||0),0);
+    const inTotal = inTx.reduce((sum,tx)=>sum+(tx.total||0),0);
+    const shiftTotal = shifts.reduce((sum,s)=>sum+(s.total||0),0);
+    const dayRevenue = outTotal + shiftTotal;
+
+    $('#reportStats').innerHTML =
+        '<div class="stat-card"><div class="stat-num">'+formatMoney(outTotal)+'</div><div class="stat-label">'+t('reportStatOutLabel')+'</div></div>'
+      + '<div class="stat-card"><div class="stat-num">'+formatMoney(shiftTotal)+'</div><div class="stat-label">'+t('reportStatShiftLabel')+'</div></div>'
+      + '<div class="stat-card stat-revenue"><div class="stat-num">'+formatMoney(dayRevenue)+'</div><div class="stat-label">'+t('reportStatTotalLabel')+'</div></div>'
+      + '<div class="stat-card stat-warn"><div class="stat-num">'+formatMoney(inTotal)+'</div><div class="stat-label">'+t('reportStatInLabel')+'</div></div>';
+
+    function groupByProduct(list){
+      const byP = {};
+      list.forEach(tx=>{
+        if(!byP[tx.productId]) byP[tx.productId] = {qty:0, total:0};
+        byP[tx.productId].qty += tx.qty;
+        byP[tx.productId].total += (tx.total||0);
+      });
+      return byP;
+    }
+    function renderProductTable(byP, containerId, emptyTitleKey){
+      const keys = Object.keys(byP);
+      if(keys.length===0){
+        $('#'+containerId).innerHTML = emptyState(t(emptyTitleKey), t('emptyReportSub'));
+        return;
+      }
+      const rows = keys.map(pid=>{
+        const p = products.find(x=>x.id===pid);
+        const r = byP[pid];
+        return '<tr><td>'+escapeHtml(p?p.name:'—')+'</td><td>'+r.qty+' '+t('stockUnit')+'</td><td>'+formatMoney(r.total)+'</td></tr>';
+      }).join('');
+      $('#'+containerId).innerHTML = '<div class="table-wrap"><table><thead><tr><th>'+t('colProduct')+'</th><th>'+t('colQty')+'</th><th>'+t('colTotal')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    }
+    renderProductTable(groupByProduct(outTx), 'reportOutTable', 'emptyReportOutTitle');
+    renderProductTable(groupByProduct(inTx), 'reportInTable', 'emptyReportInTitle');
+
+    if(shifts.length===0){
+      $('#reportShiftTable').innerHTML = emptyState(t('emptyReportShiftTitle'), t('emptyReportSub'));
+    } else {
+      const rows = shifts.slice().sort((a,b)=>b.ts-a.ts).map(s=>{
+        return '<tr><td>'+escapeHtml(s.staff||'—')+'</td><td>'+escapeHtml(s.ca||'—')+'</td><td>'+formatMoney(s.cash)+'</td><td>'+formatMoney(s.transfer)+'</td><td><strong>'+formatMoney(s.total)+'</strong></td></tr>';
+      }).join('');
+      $('#reportShiftTable').innerHTML = '<div class="table-wrap"><table><thead><tr><th>'+t('summaryColStaff')+'</th><th>'+t('labelShift')+'</th><th>'+t('paymentCash')+'</th><th>'+t('paymentTransfer')+'</th><th>'+t('summaryColTotal')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    }
+  }
+
+  /* ---------- role gate ---------- */
+  function showRoleGate(){
+    $('#roleGate').classList.remove('hidden');
+    $('#pinSection').classList.add('hidden');
+    $('#pinInput').value=''; $('#pinConfirmInput').value=''; $('#pinConfirmInput').classList.add('hidden');
+    $('#pinError').classList.add('hidden');
+  }
+  function hideRoleGate(){ $('#roleGate').classList.add('hidden'); }
+
+  function showPinError(msg){ $('#pinError').textContent = msg; $('#pinError').classList.remove('hidden'); }
+
+  function setRole(r){
+    role = r;
+    localSet('app-role', r);
+    hideRoleGate();
+    applyRoleUI();
+  }
+
+  function submitPin(){
+    const val = $('#pinInput').value.trim();
+    if(!val){ showPinError(t('pinErrorEmpty')); return; }
+    if(!adminPin){
+      const confirmVal = $('#pinConfirmInput').value.trim();
+      if(val.length<4){ showPinError(t('pinErrorTooShort')); return; }
+      if(val!==confirmVal){ showPinError(t('pinErrorMismatch')); return; }
+      adminPin = val;
+      saveAdminPin();
+      setRole('admin');
+    } else {
+      if(val===adminPin){
+        setRole('admin');
+      } else {
+        showPinError(t('pinErrorWrong'));
+      }
+    }
+  }
+
+  function applyRoleUI(){
+    const staffAllowed = ['out'];
+    document.querySelectorAll('.tab').forEach(tabBtn=>{
+      const tabName = tabBtn.dataset.tab;
+      if(role==='staff'){
+        tabBtn.classList.toggle('hidden', !staffAllowed.includes(tabName));
+      } else {
+        tabBtn.classList.remove('hidden');
+      }
+    });
+    if(role==='staff'){
+      switchTab('out');
+    }
+  }
+
+  /* ---------- language ---------- */
+  function applyLanguage(newLang){
+    lang = newLang;
+    localSet('app-lang', lang);
+    document.documentElement.lang = lang==='lo' ? 'lo' : 'vi';
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n');
+      el.textContent = t(key);
+    });
+    document.querySelectorAll('.lang-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.lang===lang);
+    });
+    renderAll();
+  }
+
+  /* ---------- tabs ---------- */
+  function switchTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('hidden', p.id !== 'panel-'+name));
+  }
+
+  /* ---------- render all ---------- */
+  function renderAll(){
+    fillProductSelects();
+    fillStaffSelects();
+    renderOverview();
+    renderProducts();
+    renderStaffList();
+    renderRecent('in','inRecentList');
+    renderRecent('out','outRecentList');
+    renderReconcileHistory();
+    renderShiftRecent();
+    renderShiftSummary();
+    renderReport();
+    renderHistory();
+  }
+
+  function setDefaultDates(){
+    const t = todayStr();
+    $('#inDateInput').value = t;
+    $('#outDateInput').value = t;
+    $('#reconcileDateInput').value = t;
+    $('#shiftSummaryMonth').value = t.slice(0,7);
+    $('#reportDate').value = t;
+  }
+
+  function bindEvents(){
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.addEventListener('click', ()=>switchTab(t.dataset.tab));
+    });
+    $('#staffNameSelect').addEventListener('change', saveStaffName);
+    $('#langViBtn').addEventListener('click', ()=>applyLanguage('vi'));
+    $('#langLoBtn').addEventListener('click', ()=>applyLanguage('lo'));
+    $('#switchRoleBtn').addEventListener('click', showRoleGate);
+    $('#roleStaffBtn').addEventListener('click', ()=>setRole('staff'));
+    $('#roleAdminBtn').addEventListener('click', ()=>{
+      $('#pinSection').classList.remove('hidden');
+      if(!adminPin){
+        $('#pinHint').textContent = t('pinHintSetup');
+        $('#pinConfirmInput').classList.remove('hidden');
+      } else {
+        $('#pinHint').textContent = t('pinHintEnter');
+        $('#pinConfirmInput').classList.add('hidden');
+      }
+      $('#pinError').classList.add('hidden');
+      $('#pinInput').value=''; $('#pinConfirmInput').value='';
+      $('#pinInput').focus();
+    });
+    $('#pinSubmitBtn').addEventListener('click', submitPin);
+    $('#pinInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitPin(); });
+    $('#pinConfirmInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitPin(); });
+    $('#productForm').addEventListener('submit', submitProductForm);
+    $('#productCancelEditBtn').addEventListener('click', cancelEditProduct);
+    $('#inForm').addEventListener('submit', (e)=>{ e.preventDefault(); submitStockForm('in'); });
+    $('#outForm').addEventListener('submit', (e)=>{ e.preventDefault(); submitStockForm('out'); });
+    $('#inQtyInput').addEventListener('input', updateInTotal);
+    $('#inPriceInput').addEventListener('input', updateInTotal);
+    $('#outQtyInput').addEventListener('input', updateOutTotal);
+    $('#outPriceInput').addEventListener('input', updateOutTotal);
+    $('#outProductSelect').addEventListener('change', ()=>{
+      const opt = $('#outProductSelect').selectedOptions[0];
+      const price = opt ? parseFloat(opt.dataset.price)||0 : 0;
+      if(price>0){ $('#outPriceInput').value = price; }
+      updateOutTotal();
+    });
+    $('#reportDate').addEventListener('change', renderReport);
+    $('#reconcileForm').addEventListener('submit', saveReconciliation);
+    $('#reconcileProductSelect').addEventListener('change', updateReconcilePreview);
+    $('#reconcileActualInput').addEventListener('input', updateReconcilePreview);
+    $('#historyProductFilter').addEventListener('change', renderHistory);
+    $('#historyTypeFilter').addEventListener('change', renderHistory);
+    $('#historyFromDate').addEventListener('change', renderHistory);
+    $('#historyToDate').addEventListener('change', renderHistory);
+    $('#staffForm').addEventListener('submit', submitStaffForm);
+    $('#shiftForm').addEventListener('submit', submitShiftForm);
+    $('#shiftCashInput').addEventListener('input', updateShiftTotal);
+    $('#shiftTransferInput').addEventListener('input', updateShiftTotal);
+    $('#shiftSummaryMonth').addEventListener('change', renderShiftSummary);
+    $('#changePinForm').addEventListener('submit', submitChangePin);
+  }
+
+  /* expose for inline onclick handlers */
+  window.__inv = { editProduct, toggleProductActive, deleteTransaction, toggleStaffActive, deleteShift };
+
+  async function init(){
+    await loadLangPref();
+    if(API_URL === 'PASTE_YOUR_WEB_APP_URL_HERE'){
+      document.getElementById('loadingOverlay').innerHTML =
+        '<div style="max-width:320px;text-align:center;padding:0 24px;">'
+        + '<div style="font-weight:700;font-size:15px;margin-bottom:8px;">Chưa kết nối Google Sheets</div>'
+        + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.5;">Dán đường link Apps Script Web App vào biến <code>API_URL</code> ở đầu phần code, lưu file rồi mở lại trang. Xem hướng dẫn đi kèm.</div>'
+        + '</div>';
+      return;
+    }
+    await loadStaffName();
+    await loadRole();
+    await loadAdminPin();
+    await Promise.all([loadProducts(), loadTransactions(), loadStaffList(), loadShiftRevenue()]);
+    setDefaultDates();
+    bindEvents();
+    applyLanguage(lang);
+    $('#loadingOverlay').classList.add('hidden');
+    if(role==='admin' || role==='staff'){
+      applyRoleUI();
+    } else {
+      showRoleGate();
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
