@@ -347,7 +347,7 @@
       <form id="inForm" class="form-grid">
         <div class="field"><label data-i18n="labelProduct">Sản phẩm</label><select id="inProductSelect" required></select></div>
         <div class="field"><label data-i18n="labelQty">Số lượng (gói)</label><input id="inQtyInput" type="number" min="1" step="1" required /></div>
-        <div class="field"><label data-i18n="labelInPrice">Đơn giá nhập (₭/gói)</label><input id="inPriceInput" type="number" min="0" step="1000" /></div>
+        <div class="field"><label data-i18n="labelInPrice">Đơn giá nhập (₭/gói)</label><input id="inPriceInput" type="number" min="0" step="any" /></div>
         <div class="field"><label data-i18n="labelPayment">Phương thức thanh toán</label>
           <select id="inPaymentSelect">
             <option value="" data-i18n="paymentNone">— Không ghi —</option>
@@ -384,7 +384,7 @@
       <form id="outForm" class="form-grid">
         <div class="field"><label data-i18n="labelProduct">Sản phẩm</label><select id="outProductSelect" required></select></div>
         <div class="field"><label data-i18n="labelQty">Số lượng (gói)</label><input id="outQtyInput" type="number" min="1" step="1" required /></div>
-        <div class="field"><label data-i18n="labelOutPrice">Đơn giá bán (₭/gói)</label><input id="outPriceInput" type="number" min="0" step="1000" /></div>
+        <div class="field"><label data-i18n="labelOutPrice">Đơn giá bán (₭/gói)</label><input id="outPriceInput" type="number" min="0" step="any" /></div>
         <div class="field"><label data-i18n="labelPayment">Phương thức thanh toán</label>
           <select id="outPaymentSelect">
             <option value="" data-i18n="paymentNone">— Không ghi —</option>
@@ -405,8 +405,8 @@
       <h3 class="card-title" data-i18n="shiftTitle">Ghi doanh số giặt sấy theo ca</h3>
       <p class="card-hint" data-i18n="shiftHint">Ghi doanh số dịch vụ giặt sấy mỗi ca làm việc của từng nhân viên — dùng để tính thưởng cuối tháng.</p>
       <form id="shiftForm" class="form-grid">
-        <div class="field"><label data-i18n="labelCash">Tiền mặt (₭)</label><input id="shiftCashInput" type="number" min="0" step="1000" value="0" /></div>
-        <div class="field"><label data-i18n="labelTransfer">Chuyển khoản (₭)</label><input id="shiftTransferInput" type="number" min="0" step="1000" value="0" /></div>
+        <div class="field"><label data-i18n="labelCash">Tiền mặt (₭)</label><input id="shiftCashInput" type="number" min="0" step="any" value="0" /></div>
+        <div class="field"><label data-i18n="labelTransfer">Chuyển khoản (₭)</label><input id="shiftTransferInput" type="number" min="0" step="any" value="0" /></div>
         <div class="field"><label data-i18n="labelTotalRevenue">Doanh số</label><div id="shiftTotalDisplay" class="money-preview">0 ₭</div></div>
         <div class="field field-wide"><label data-i18n="labelNote">Ghi chú</label><input id="shiftNoteInput" type="text" /></div>
         <button type="submit" class="btn btn-primary" data-i18n="btnSaveShift">Lưu doanh số ca</button>
@@ -456,7 +456,7 @@
           <datalist id="categoryOptions"><option value="Nước giặt"></option><option value="Nước xả"></option></datalist>
         </div>
         <div class="field"><label data-i18n="labelLowStock">Ngưỡng cảnh báo (gói)</label><input id="productLowStockInput" type="number" min="0" step="1" value="5" /></div>
-        <div class="field"><label data-i18n="labelSellPrice">Giá bán mặc định (₭/gói)</label><input id="productSellPriceInput" type="number" min="0" step="1000" placeholder="Tùy chọn" /></div>
+        <div class="field"><label data-i18n="labelSellPrice">Giá bán mặc định (₭/gói)</label><input id="productSellPriceInput" type="number" min="0" step="any" placeholder="Tùy chọn" /></div>
         <div class="field" id="productInitStockField"><label data-i18n="labelInitStock">Tồn kho ban đầu (gói)</label><input id="productInitStockInput" type="number" min="0" step="1" value="0" /></div>
         <button type="submit" id="productFormSubmitBtn" class="btn btn-primary" data-i18n="btnAddProduct">Thêm sản phẩm</button>
         <button type="button" id="productCancelEditBtn" class="btn btn-secondary hidden" data-i18n="btnCancel">Hủy</button>
@@ -841,14 +841,24 @@
   function localSet(key, value){
     try{ localStorage.setItem(key, value); }catch(e){ console.error(e); }
   }
+  async function fetchWithTimeout(url, options, timeoutMs){
+    timeoutMs = timeoutMs || 12000;
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    try{
+      return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
   async function apiGet(key){
-    const res = await fetch(API_URL + '?key=' + encodeURIComponent(key));
+    const res = await fetchWithTimeout(API_URL + '?key=' + encodeURIComponent(key));
     if(!res.ok) throw new Error('API GET failed: '+res.status);
     const data = await res.json();
     return data.value;
   }
   async function apiSet(key, value){
-    const res = await fetch(API_URL, {
+    const res = await fetchWithTimeout(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ key, value })
@@ -1646,18 +1656,27 @@
         + '</div>';
       return;
     }
-    await loadStaffName();
-    await loadRole();
-    await loadAdminPin();
-    await Promise.all([loadProducts(), loadTransactions(), loadStaffList(), loadShiftRevenue()]);
-    setDefaultDates();
-    bindEvents();
-    applyLanguage(lang);
-    $('#loadingOverlay').classList.add('hidden');
-    if(role==='admin' || role==='staff'){
-      applyRoleUI();
-    } else {
-      showRoleGate();
+    try{
+      await loadStaffName();
+      await loadRole();
+      await loadAdminPin();
+      await Promise.all([loadProducts(), loadTransactions(), loadStaffList(), loadShiftRevenue()]);
+      setDefaultDates();
+      bindEvents();
+      applyLanguage(lang);
+      $('#loadingOverlay').classList.add('hidden');
+      if(role==='admin' || role==='staff'){
+        applyRoleUI();
+      } else {
+        showRoleGate();
+      }
+    }catch(err){
+      console.error('Init failed:', err);
+      document.getElementById('loadingOverlay').innerHTML =
+        '<div style="max-width:320px;text-align:center;padding:0 24px;">'
+        + '<div style="font-weight:700;font-size:15px;margin-bottom:8px;">Không tải được dữ liệu</div>'
+        + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.5;">Kiểm tra lại đường link API_URL, kết nối mạng, hoặc xem chi tiết lỗi trong Console (F12).<br><br>Lỗi: '+escapeHtml(String(err && err.message || err))+'</div>'
+        + '</div>';
     }
   }
 
